@@ -1,10 +1,12 @@
 package com.duangframework.agv.model;
 
+import com.duangframework.agv.kit.ToolsKit;
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.drivers.vehicle.VehicleProcessModel;
 
 import javax.annotation.Nonnull;
 
+import static com.duangframework.agv.enums.Attribute.*;
 import static java.util.Objects.requireNonNull;
 import static org.opentcs.util.Assertions.checkInRange;
 
@@ -12,7 +14,7 @@ import static org.opentcs.util.Assertions.checkInRange;
  * 车辆进程参数模型
  * @author Laotang
  */
-public class DuangAgvProcessModel extends VehicleProcessModel {
+public class AgvProcessModel extends VehicleProcessModel {
 
     /**车辆的地址*/
     private String vehicleHost;
@@ -59,7 +61,7 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
      *
      * @param attachedVehicle 车辆属性
      */
-    public DuangAgvProcessModel(@Nonnull Vehicle attachedVehicle) {
+    public AgvProcessModel(@Nonnull Vehicle attachedVehicle) {
         super(attachedVehicle);
     }
 
@@ -70,7 +72,7 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
     public void setVehicleHost(String vehicleHost) {
         String oldValue = this.vehicleHost;
         this.vehicleHost = requireNonNull(vehicleHost, "vehicleHost");
-        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.VEHICLE_HOST.name(),
+        getPropertyChangeSupport().firePropertyChange(VEHICLE_HOST.name(),
                 oldValue,
                 vehicleHost);
     }
@@ -81,8 +83,8 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
 
     public void setVehiclePort(int vehiclePort) {
         int oldValue = this.vehiclePort;
-        this.vehiclePort = checkInRange(vehiclePort,ToolsKit.getMinPort(),ToolsKit.getMaxPort(), "vehiclePort");
-        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.VEHICLE_PORT.name(),
+        this.vehiclePort = checkInRange(vehiclePort, ToolsKit.getMinPort(),ToolsKit.getMaxPort(), "vehiclePort");
+        getPropertyChangeSupport().firePropertyChange(VEHICLE_PORT.name(),
                 oldValue,
                 vehiclePort);
     }
@@ -127,7 +129,7 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
         boolean oldValue = this.vehicleIdle;
         this.vehicleIdle = idle;
 
-        getPropertyChangeSupport().firePropertyChange(com.makerwit.opentcs.enums.Attribute.VEHICLE_IDLE.name(),
+        getPropertyChangeSupport().firePropertyChange(VEHICLE_IDLE.name(),
                 oldValue,
                 idle);
     }
@@ -140,11 +142,12 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
         boolean oldValue = this.disconnectingOnVehicleIdle;
         this.disconnectingOnVehicleIdle = disconnectingOnVehicleIdle;
 
-        getPropertyChangeSupport().firePropertyChange(com.makerwit.opentcs.enums.Attribute.DISCONNECTING_ON_IDLE.name(),
+        getPropertyChangeSupport().firePropertyChange(DISCONNECTING_ON_IDLE.name(),
                 oldValue,
                 disconnectingOnVehicleIdle);
     }
 
+    /*
     @Nonnull
     public MakerwitResponse getCurrentState() {
         return currentState;
@@ -154,7 +157,7 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
         MakerwitResponse oldValue = this.currentState;
         this.currentState = requireNonNull(currentState, "currentState");
 
-        getPropertyChangeSupport().firePropertyChange(com.makerwit.opentcs.enums.Attribute.CURRENT_STATE.name(),
+        getPropertyChangeSupport().firePropertyChange(CURRENT_STATE.name(),
                 oldValue,
                 currentState);
     }
@@ -181,6 +184,7 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
                 oldValue,
                 lastOrderSent);
     }
+    */
 
     public boolean isPeriodicStateRequestEnabled(){
         return periodicStateRequestEnabled;
@@ -189,6 +193,7 @@ public class DuangAgvProcessModel extends VehicleProcessModel {
     public void setPeriodicStateRequestEnabled(boolean periodicStateRequestEnabled) {
         this.periodicStateRequestEnabled = periodicStateRequestEnabled;
     }
+
 
 //    @Nonnull
 //    public StateResponse getCurrentState() {

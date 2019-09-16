@@ -1,11 +1,13 @@
 package com.duangframework.agv.adapter;
 
 import com.duangframework.agv.core.ITelegramMapper;
-import com.duangframework.agv.core.TelegramSender;
+import com.duangframework.agv.core.ITelegramSender;
+import com.duangframework.agv.core.TelegramMatcher;
 import com.duangframework.agv.enums.LoadAction;
+import com.duangframework.agv.listener.ConnEventListener;
+import com.duangframework.agv.model.AgvProcessModel;
 import com.google.inject.assistedinject.Assisted;
 import io.netty.channel.ChannelHandler;
-import org.opentcs.contrib.tcp.netty.ConnectionEventListener;
 import org.opentcs.contrib.tcp.netty.TcpClientChannelManager;
 import org.opentcs.data.model.Point;
 import org.opentcs.data.model.Vehicle;
@@ -31,17 +33,22 @@ import static java.util.Objects.requireNonNull;
  *
  * @author Laotang
  */
-public class DuangAgvCommAdapter
+public class CommAdapter
         extends BasicVehicleCommAdapter
-        implements ConnectionEventListener<String>, TelegramSender {
+        implements ITelegramSender {
 
-    private static final Logger logger = LoggerFactory.getLogger(DuangAgvCommAdapter.class);
-    private DuangAgvAdapterComponentsFactory componentsFactory;
+    private static final Logger logger = LoggerFactory.getLogger(CommAdapter.class);
+    // 组件工厂
+    private AdapterComponentsFactory componentsFactory;
+    // 车辆管理缓存池
     private TcpClientChannelManager<String, String> vehicleChannelManager;
-     // 请求响应匹配器
-    private RequestResponseMatcher requestResponseMatcher;
+     // 请求响应电报匹配器
+    private TelegramMatcher telegramMatcher;
+    // 电报构造器
     private ITelegramMapper telegramMapper;
+
     private final Map<MovementCommand, String> orderIds = new ConcurrentHashMap<>();
+
     private final Map<String, String> lastFinishedPositionIds =new ConcurrentHashMap<>();
 
 
@@ -52,8 +59,8 @@ public class DuangAgvCommAdapter
      * @param componentsFactory 组件工厂
      */
     @Inject
-    public DuangAgvCommAdapter(@Assisted Vehicle vehicle, ITelegramMapper telegramMapper, DuangAgvAdapterComponentsFactory componentsFactory) {
-        super(new MakerwitProcessModel(vehicle), 3, 2, LoadAction.CHARGE);
+    public CommAdapter(@Assisted Vehicle vehicle, ITelegramMapper telegramMapper, AdapterComponentsFactory componentsFactory) {
+        super(new AgvProcessModel(vehicle), 3, 2, LoadAction.CHARGE);
         this.telegramMapper = requireNonNull(telegramMapper,"telegramMapper");
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
     }
@@ -64,10 +71,10 @@ public class DuangAgvCommAdapter
     @Override
     public void initialize() {
         super.initialize();
-        this.requestResponseMatcher= componentsFactory.createRequestResponseMatcher(this);
+        this.telegramMatcher = componentsFactory.createTelegramMatcher(this);
 //        this.stateRequesterTask = componentsFactory.createStateRequesterTask(e -> {
 //            logger.info("Adding new state requests to the queue.");
-//            requestResponseMatcher.enqueueRequest(new MakerwitRequest.Builder().build());
+//            telegramMatcher.enqueueRequest(new MakerwitRequest.Builder().build());
 //        });
     }
 
@@ -90,7 +97,7 @@ public class DuangAgvCommAdapter
         }
 
         // 创建负责与车辆连接的渠道管理器,基于netty
-        vehicleChannelManager = new TcpClientChannelManager<String, String>(this,
+        vehicleChannelManager = new TcpClientChannelManager<>(new ConnEventListener(this),
                 this::getChannelHandlers,
                 getProcessModel().getVehicleIdleTimeout(),
                 getProcessModel().isLoggingEnabled());
@@ -106,8 +113,12 @@ public class DuangAgvCommAdapter
      * @return
      */
     @Override
-    public final MakerwitProcessModel getProcessModel() {
-        return (MakerwitProcessModel) super.getProcessModel();
+    public final AgvProcessModel getProcessModel() {
+        return (AgvProcessModel) super.getProcessModel();
+    }
+
+    public TcpClientChannelManager<String, String> getVehicleChannelManager() {
+        return vehicleChannelManager;
     }
 
     /**
@@ -121,14 +132,14 @@ public class DuangAgvCommAdapter
         logger.info("sendCommand {}", cmd);
         try {
             // 将移动的参数转换为请求参数，这里要根据协议规则生成对应的请求对象
-            MakerwitRequest telegram = makerwitMapper.mapToRquest(getProcessModel(), cmd);
+            MakerwitRequest telegram =  telegramMapper.builderTelegram(getProcessModel(), cmd);
             String card =UplinkParam.string2UplinkParam(telegram.getParams()).getCard();
             // 将移动命令放入缓存池
             orderIds.put(cmd, card);
             // 将车辆与路径最后一个点的位置绑定起来
             lastFinishedPositionIds.put(telegram.getDeviceId(), cmd.getFinalDestination().getName());
             // 把请求加入队列。请求发送规则是FIFO。这确保我们总是等待响应，直到发送新请求。
-            requestResponseMatcher.enqueueRequest(telegram);
+            telegramMatcher.enqueueRequest(telegram);
             logger.info("{}: 将订单报文提交到消息队列完成", getName());
         } catch (Exception e) {
             logger.error("{}: 将订单报文提交到消息队列失败 {}", getName(), cmd, e);
@@ -181,18 +192,6 @@ public class DuangAgvCommAdapter
         getProcessModel().setVehicleIdle(true);
 
         logger.warn("连接车辆 {} 成功:  host:{} port:{}.", getName(), host, port);
-    }
-
-    /**
-     * 断开连接
-     */
-    @Override
-    protected void disconnectVehicle() {
-        if(ToolsKit.isEmpty(vehicleChannelManager)) {
-            logger.warn("断开连接车辆 {} 时失败: vehicleChannelManager not present.", getName());
-            return;
-        }
-        vehicleChannelManager.disconnect();
     }
 
     /**
@@ -290,7 +289,7 @@ public class DuangAgvCommAdapter
         // 是否与请求队列中的第一个匹配
         MakerwitResponse makerwitResponse = new MakerwitResponse(response);
 //        MakerwitRequest makerwitRequest = makerwitResponse.toRequestObject();
-        if(!requestResponseMatcher.tryMatchWithCurrentRequest(makerwitResponse)) {
+        if(!telegramMatcher.tryMatchWithCurrentRequestTelegram(makerwitResponse)) {
             // 如果不匹配，则忽略该响应或关闭连接
             return;
         }
@@ -298,70 +297,10 @@ public class DuangAgvCommAdapter
         /**检查并更新车辆状态，位置点*/
         checkForVehiclePositionUpdate(makerwitResponse);
         /**在执行上面更新位置的方法后再检查是否有下一条请求需要发送*/
-        requestResponseMatcher.checkForSendingNextRequest();
+        telegramMatcher.checkForSendingNextRequest();
     }
 
-    /**
-     *连接成功时调用
-     */
-    @Override
-    public void onConnect() {
-        if(!isEnabled()){
-            return;
-        }
-        logger.warn("{} 连接成功", getName());
-        // 告知通信适配器当前已连接
-        getProcessModel().setCommAdapterConnected(true);
-    }
 
-    /**
-     * 连接失败时调用
-     */
-    @Override
-    public void onFailedConnectionAttempt() {
-        if(!isEnabled()) {
-            return;
-        }
-        // 告知通讯适配器当前连接失败
-        getProcessModel().setCommAdapterConnected(false);
-        // 如果是开启了且设置了自动重连接
-        reconnecting();
-    }
-
-    /**
-     * 断开连接时调用
-     */
-    @Override
-    public void onDisconnect() {
-        logger.warn("{} 断开连接", getName());
-        // 告知通讯适配器当前连接断开
-        getProcessModel().setCommAdapterConnected(false);
-        // 将车辆设置为空闲
-        getProcessModel().setVehicleIdle(true);
-        // 再将车辆的状态设置为未知
-        getProcessModel().setVehicleState(Vehicle.State.UNKNOWN);
-        // 如果是开启了且设置了自动重连接
-        reconnecting();
-    }
-
-    /**自动重连*/
-    private void reconnecting(){
-        if(isEnabled() && getProcessModel().isReconnectingOnConnectionLoss()) {
-            vehicleChannelManager.scheduleConnect(getProcessModel().getVehicleHost(),
-                    getProcessModel().getVehiclePort(),
-                    getProcessModel().getReconnectDelay());
-        }
-    }
-
-    @Override
-    public void onIdle() {
-//        logger.info("{} 空闲", getName());
-        getProcessModel().setVehicleIdle(true);
-        if(isEnabled() && getProcessModel().isDisconnectingOnVehicleIdle()){
-            logger.info("{} 车辆空闲，断开连接", getName());
-            disconnectVehicle();
-        }
-    }
 
     /**
      * 检查车辆位置并更新

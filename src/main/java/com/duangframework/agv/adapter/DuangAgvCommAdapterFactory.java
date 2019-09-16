@@ -1,5 +1,6 @@
 package com.duangframework.agv.adapter;
 
+import com.duangframework.agv.kit.ToolsKit;
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.drivers.vehicle.VehicleCommAdapter;
 import org.opentcs.drivers.vehicle.VehicleCommAdapterFactory;
@@ -11,6 +12,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
+import static org.opentcs.util.Assertions.checkInRange;
 
 /**
  * 适配器工厂
@@ -21,12 +23,12 @@ public class DuangAgvCommAdapterFactory implements VehicleCommAdapterFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DuangAgvCommAdapterFactory.class);
 
-    private DuangAgvAdapterComponentsFactory componentsFactory;
+    private AdapterComponentsFactory componentsFactory;
 
     private boolean initialized;
 
     @Inject
-    public DuangAgvCommAdapterFactory(DuangAgvAdapterComponentsFactory componentsFactory) {
+    public DuangAgvCommAdapterFactory(AdapterComponentsFactory componentsFactory) {
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
     }
 
@@ -81,7 +83,7 @@ public class DuangAgvCommAdapterFactory implements VehicleCommAdapterFactory {
         try {
             // 端口设置范围
             int port = Integer.parseInt(vehicle.getProperty(ToolsKit.getVehiclePortName()));
-            ToolsKit.checkInRange(port,ToolsKit.getMinPort(),ToolsKit.getMaxPort(), "port value");
+            checkInRange(port,ToolsKit.getMinPort(),ToolsKit.getMaxPort(), "port value");
         } catch (IllegalArgumentException exc) {
             return false;
         }
@@ -97,11 +99,11 @@ public class DuangAgvCommAdapterFactory implements VehicleCommAdapterFactory {
         if(!providesAdapterFor(vehicle)){
             return null;
         }
-        MakerwitCommAdapter makerwitCommAdapter = componentsFactory.createMakerwitCommAdapter(vehicle);
-        requireNonNull(makerwitCommAdapter, "创智通讯适配器对象不能为空，请检查！");
-        makerwitCommAdapter.getProcessModel().setVehicleHost(vehicle.getProperty(ToolsKit.getVehicleHostName()));
-        makerwitCommAdapter.getProcessModel().setVehiclePort(Integer.parseInt(vehicle.getProperty(ToolsKit.getVehiclePortName())));
-        return makerwitCommAdapter;
+        CommAdapter commAdapter = componentsFactory.createCommAdapter(vehicle);
+        requireNonNull(commAdapter, "通讯适配器对象不能为空，请检查！");
+        commAdapter.getProcessModel().setVehicleHost(vehicle.getProperty(ToolsKit.getVehicleHostName()));
+        commAdapter.getProcessModel().setVehiclePort(Integer.parseInt(vehicle.getProperty(ToolsKit.getVehiclePortName())));
+        return commAdapter;
     }
 
 }

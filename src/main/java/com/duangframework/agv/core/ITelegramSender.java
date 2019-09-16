@@ -8,7 +8,7 @@ package com.duangframework.agv.core;
  *
  * @author Laotang
  */
-public interface TelegramSender {
+public interface ITelegramSender {
 
   /**
    *  发送电报
