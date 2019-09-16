@@ -1,0 +1,22 @@
+package com.duangframework.agv.enums;
+
+/**
+ * 模型属性枚举
+ *
+ * @author Laotang
+ */
+public enum Attribute {
+    CURRENT_STATE,
+    PREVIOUS_STATE,
+    LAST_ORDER,
+    VEHICLE_HOST,
+    VEHICLE_PORT,
+    PERIODIC_STATE_REQUESTS_ENABLED,
+    PERIOD_STATE_REQUESTS_INTERVAL,
+    VEHICLE_IDLE_TIMEOUT,
+    VEHICLE_IDLE,
+    DISCONNECTING_ON_IDLE,
+    RECONNECTING_ON_CONNECTION_LOSS,
+    LOGGING_ENABLED,
+    RECONNECT_DELAY;
+}
