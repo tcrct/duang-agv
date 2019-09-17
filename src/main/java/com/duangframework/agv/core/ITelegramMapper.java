@@ -1,6 +1,10 @@
 package com.duangframework.agv.core;
 
+import io.netty.channel.ChannelHandler;
 import org.opentcs.drivers.vehicle.MovementCommand;
+
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * 构建电报接口类
@@ -16,5 +20,15 @@ public interface ITelegramMapper<T> {
      */
     Telegram  builderTelegram(T processModel, MovementCommand movementCommand);
 
+    /**
+     *
+     * @param responseString
+     * @return
+     */
     Telegram builderTelegram(String responseString);
+
+    /**
+     *
+     */
+    Supplier<List<ChannelHandler>> getChannelHandlers();
 }

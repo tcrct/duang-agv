@@ -3,7 +3,6 @@ package com.duangframework.agv.adapter;
 import com.duangframework.agv.core.*;
 import com.duangframework.agv.enums.LoadAction;
 import com.duangframework.agv.enums.LoadState;
-import com.duangframework.agv.kit.ClassKit;
 import com.duangframework.agv.kit.ObjectKit;
 import com.duangframework.agv.kit.PropKit;
 import com.duangframework.agv.kit.ToolsKit;

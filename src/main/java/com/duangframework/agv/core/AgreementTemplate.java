@@ -42,6 +42,7 @@ public abstract class AgreementTemplate implements ITelegramMapper<ProcessModel>
      * 返回负责从字节流中写入和读取的通道处理程序
      * @return The channel handlers responsible for writing and reading from the byte stream
      */
+    @Override
     public Supplier<List<ChannelHandler>> getChannelHandlers() {
         Supplier<List<ChannelHandler>> listSupplier = new Supplier<List<ChannelHandler>>() {
             @Override

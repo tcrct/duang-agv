@@ -11,10 +11,5 @@ public class EmptyTelegram extends Telegram {
                 ", positionId='" + positionId + '\'' +
                 '}';
     }
-
-    @Override
-    public Telegram toTelegram(String responseTelegramString) {
-        return null;
-    }
 }
 

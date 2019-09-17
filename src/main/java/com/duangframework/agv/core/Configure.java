@@ -12,7 +12,9 @@ public class Configure {
     }
 
     protected void init() {
-        String configPath = PathKit.getWebRootPath()+ File.separator  + "src"+File.separator+"main"+File.separator+"resources";
+        String classPath = PathKit.getPath(Configure.class);
+        String packagePath= File.separator + Configure.class.getPackage().getName().replace(".", File.separator);
+        String configPath = classPath.replace(packagePath, "");
         System.setProperty("java.util.logging.config.file", configPath+ "/config/logging.config");
         System.setProperty("java.security.policy", configPath + "/config/java.policy");
         System.setProperty("opentcs.base", configPath);
