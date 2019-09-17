@@ -19,16 +19,16 @@ import static org.opentcs.util.Assertions.checkInRange;
  *
  * @author Laotang
  */
-public class DuangAgvCommAdapterFactory implements VehicleCommAdapterFactory {
+public class CommAdapterFactory implements VehicleCommAdapterFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger(DuangAgvCommAdapterFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(CommAdapterFactory.class);
 
     private AdapterComponentsFactory componentsFactory;
 
     private boolean initialized;
 
     @Inject
-    public DuangAgvCommAdapterFactory(AdapterComponentsFactory componentsFactory) {
+    public CommAdapterFactory(AdapterComponentsFactory componentsFactory) {
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
     }
 

@@ -26,10 +26,10 @@ public class TelegramMatcher {
     private final Queue<Telegram> requests = new LinkedList<>();
 
     /** 电报发送接口*/
-    private ITelegramSender telegramSender;
+    private AgreementTemplate telegramSender;
 
     @Inject
-    public TelegramMatcher(@Assisted ITelegramSender telegramSender) {
+    public TelegramMatcher(@Assisted AgreementTemplate telegramSender) {
         this.telegramSender = requireNonNull(telegramSender, "telegramSender");
     }
 

@@ -14,7 +14,7 @@ import static org.opentcs.util.Assertions.checkInRange;
  * 车辆进程参数模型
  * @author Laotang
  */
-public class AgvProcessModel extends VehicleProcessModel {
+public class ProcessModel extends VehicleProcessModel {
 
     /**车辆的地址*/
     private String vehicleHost;
@@ -61,7 +61,7 @@ public class AgvProcessModel extends VehicleProcessModel {
      *
      * @param attachedVehicle 车辆属性
      */
-    public AgvProcessModel(@Nonnull Vehicle attachedVehicle) {
+    public ProcessModel(@Nonnull Vehicle attachedVehicle) {
         super(attachedVehicle);
     }
 

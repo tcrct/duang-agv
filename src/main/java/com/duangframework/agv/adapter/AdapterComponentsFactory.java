@@ -1,7 +1,8 @@
 package com.duangframework.agv.adapter;
 
-import com.duangframework.agv.core.ITelegramSender;
+import com.duangframework.agv.core.AgreementTemplate;
 import com.duangframework.agv.core.TelegramMatcher;
+import org.opentcs.configuration.ConfigurationEntry;
 import org.opentcs.data.model.Vehicle;
 
 
@@ -22,9 +23,9 @@ public interface AdapterComponentsFactory {
 
     /**
      * 创建请求响应匹配器
-     * @param telegramSender    发送电报对象
+     * @param template    处理模板
      * @return TelegramMatcher
      */
-    TelegramMatcher createTelegramMatcher(ITelegramSender telegramSender);
+    TelegramMatcher createTelegramMatcher(AgreementTemplate template);
 
 }

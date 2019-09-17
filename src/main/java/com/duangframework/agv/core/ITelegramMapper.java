@@ -15,4 +15,6 @@ public interface ITelegramMapper<T> {
      * @return
      */
     Telegram  builderTelegram(T processModel, MovementCommand movementCommand);
+
+    Telegram builderTelegram(String responseString);
 }

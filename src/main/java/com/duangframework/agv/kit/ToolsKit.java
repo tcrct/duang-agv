@@ -1,10 +1,13 @@
 package com.duangframework.agv.kit;
 
-import com.makerwit.opentcs.enums.OperatingState;
+import com.duangframework.agv.enums.OperatingState;
 import org.opentcs.data.model.Vehicle;
 
 import javax.annotation.Nullable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 
 public class ToolsKit {
@@ -163,6 +166,22 @@ public class ToolsKit {
                 return Vehicle.State.ERROR;
             default:
                 return Vehicle.State.UNKNOWN;
+        }
+    }
+
+    /**
+     *  将字符串日期根据format格式化字段转换成日期类型
+     * @param stringDate    字符串日期
+     * @param format           格式化日期
+     * @return
+     */
+    public static Date parseDate(String stringDate, String format) {
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        try {
+            return sdf.parse(stringDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }
