@@ -8,13 +8,14 @@ import com.duangframework.agv.kit.PropKit;
 import com.duangframework.agv.kit.ToolsKit;
 import com.duangframework.agv.model.ProcessModel;
 import com.google.inject.assistedinject.Assisted;
+import org.opentcs.components.kernel.services.TCSObjectService;
 import org.opentcs.contrib.tcp.netty.TcpClientChannelManager;
 import org.opentcs.data.model.Point;
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.data.order.DriveOrder;
 import org.opentcs.drivers.vehicle.BasicVehicleCommAdapter;
 import org.opentcs.drivers.vehicle.MovementCommand;
-import org.opentcs.drivers.vehicle.VehicleCommAdapterPanel;
+import org.opentcs.util.Comparators;
 import org.opentcs.util.ExplainedBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.swing.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,7 +37,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(CommAdapter.class);
     // 组件工厂
-    private AdapterComponentsFactory componentsFactory;
+    private ComponentsFactory componentsFactory;
     // 车辆管理缓存池
     private TcpClientChannelManager<String, String> vehicleChannelManager;
      // 请求响应电报匹配器
@@ -49,20 +49,22 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
     private final Map<String, String> lastFinishedPositionIds =new ConcurrentHashMap<>();
 
+    private TCSObjectService objectService;
+
 
     /***
      * 构造函数
      * @param vehicle   车辆
-     * @param template 模板
      * @param componentsFactory 组件工厂
      */
     @Inject
-    public CommAdapter(@Assisted Vehicle vehicle, AdapterComponentsFactory componentsFactory) {
+    public CommAdapter(@Assisted Vehicle vehicle, TCSObjectService objectService, ComponentsFactory componentsFactory) {
         super(new ProcessModel(vehicle), 3, 2, LoadAction.CHARGE);
         String agreementTemplate = PropKit.get("agreement.template", "");
         requireNonNull(agreementTemplate,"请在duang.properties里设置agreement.template值");
         this.template = ObjectKit.newInstance(agreementTemplate);
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
+        this.objectService = objectService;
         template.setComponent(this);
     }
 
@@ -172,21 +174,18 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         vehicleChannelManager.connect(host, port);
         List<String> pointNameList = new ArrayList<>();
 
-        final JComboBox<Point> pointComboBox = new JComboBox<>();
-        for(Iterator<VehicleCommAdapterPanel> iterator = getAdapterPanels().iterator(); iterator.hasNext();) {
-            VehicleCommAdapterPanel panel = iterator.next();
+        Set<Point> pointSet = objectService.fetchObjects(Point.class);
+        List<Point> pointList = new ArrayList<>(pointSet);
+        Collections.sort(pointList, Comparators.objectsByName());
+        pointList.add(0, null);
 
-            System.out.println(panel.getName());
-
-
-//            pointComboBox.addItem(command.getStep().getSourcePoint());
-//            System.out.println(command.getStep().getSourcePoint().getName());
-//            pointNameList.add(command.getStep().getSourcePoint().getName());
+        for(Point point : pointList) {
+            System.out.println(point.getName());
         }
-//        pointComboBox.addItemListener((ItemEvent e) ->{
-//            Point newPoint = (Point)e.getItem();
-//            getProcessModel().setVehiclePosition(newPoint.getName());
-//        });
+
+
+
+//        getProcessModel().setVehiclePosition(((Point) item).getName());
         // TODO 可以改为下拉选择的方式 ，待完成，目前先将起点位置设置为Point-0001
         getProcessModel().setVehiclePosition("Point-0001");
         getProcessModel().setVehicleState(Vehicle.State.IDLE);
@@ -291,10 +290,14 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         if (ToolsKit.isNotEmpty(currentPosition)) {
             getProcessModel().setVehiclePosition(currentPosition);
         }
-
-        MovementCommand cmd = getSentQueue().poll();
-        cmdIds.remove(cmd);
-        getProcessModel().commandExecuted(cmd);
+        // Update GUI.
+        synchronized (CommAdapter.this) {
+            MovementCommand cmd = getSentQueue().poll();
+            cmdIds.remove(cmd);
+            getProcessModel().commandExecuted(cmd);
+            // 唤醒处于等待状态的线程
+            CommAdapter.this.notify();
+        }
     }
 
 }

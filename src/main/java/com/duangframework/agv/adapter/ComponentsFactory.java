@@ -11,7 +11,7 @@ import org.opentcs.data.model.Vehicle;
  *
  * @author Laotang
  */
-public interface AdapterComponentsFactory {
+public interface ComponentsFactory {
 
     /**
      * 创建一个新的通讯适配器(CommAdapter)给车辆

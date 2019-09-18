@@ -1,5 +1,6 @@
 package com.duangframework.agv.core;
 
+import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.opentcs.guing.RunPlantOverview;
 import org.opentcs.kernel.RunKernel;
 import org.opentcs.kernelcontrolcenter.RunKernelControlCenter;
@@ -8,6 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Application {
 
@@ -61,6 +65,20 @@ public class Application {
         // 启动工厂概述控制中心
         RunPlantOverview.main(null);
         logger.warn("启动工厂概述控制中心完成");
+
+//        ExecutorService executor = Executors.newFixedThreadPool(2);
+//        executor.submit(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//            }
+//        });
+//        executor.submit(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//            }
+//        });
     }
 
 }

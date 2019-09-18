@@ -1,5 +1,6 @@
 package com.duangframework.agv.adapter;
 
+import com.duangframework.agv.kit.PropKit;
 import com.duangframework.agv.kit.ToolsKit;
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.drivers.vehicle.VehicleCommAdapter;
@@ -23,12 +24,12 @@ public class CommAdapterFactory implements VehicleCommAdapterFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(CommAdapterFactory.class);
 
-    private AdapterComponentsFactory componentsFactory;
+    private ComponentsFactory componentsFactory;
 
     private boolean initialized;
 
     @Inject
-    public CommAdapterFactory(AdapterComponentsFactory componentsFactory) {
+    public CommAdapterFactory(ComponentsFactory componentsFactory) {
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
     }
 
@@ -55,11 +56,6 @@ public class CommAdapterFactory implements VehicleCommAdapterFactory {
         initialized = false;
     }
 
-//    @Override
-//    public VehicleCommAdapterDescription getDescription() {
-//        return new MakerwitCommAdapterDescription();
-//    }
-
     /**
      * 创智通讯适配器的名称
      * @return 名称
@@ -67,8 +63,7 @@ public class CommAdapterFactory implements VehicleCommAdapterFactory {
     @Override
     @Deprecated
     public String getAdapterDescription() {
-        return "MakerwitAdapter";
-//        return getDescription().getDescription();
+        return PropKit.get("adapter.name", "MyAdapter");
     }
 
     @Override

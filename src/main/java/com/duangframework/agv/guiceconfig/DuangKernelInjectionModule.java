@@ -1,6 +1,6 @@
 package com.duangframework.agv.guiceconfig;
 
-import com.duangframework.agv.adapter.AdapterComponentsFactory;
+import com.duangframework.agv.adapter.ComponentsFactory;
 import com.duangframework.agv.adapter.CommAdapterFactory;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import org.opentcs.customizations.kernel.KernelInjectionModule;
@@ -14,7 +14,7 @@ public class DuangKernelInjectionModule extends KernelInjectionModule {
     @Override
     protected void configure() {
         // 安装及绑定通讯工厂
-        install(new FactoryModuleBuilder().build(AdapterComponentsFactory.class));
+        install(new FactoryModuleBuilder().build(ComponentsFactory.class));
         vehicleCommAdaptersBinder().addBinding().to(CommAdapterFactory.class);
         logger.info("安装及绑定通讯工厂成功");
     }
