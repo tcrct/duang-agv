@@ -1,10 +1,10 @@
 package com.duangframework.agv.adapter;
 
-import com.duangframework.agv.model.ProcessModelTO;
+import com.duangframework.agv.enums.Attribute;
+import com.duangframework.agv.model.VehicleModelTO;
 import com.duangframework.agv.model.VehicleModel;
 import org.opentcs.drivers.vehicle.management.VehicleCommAdapterPanel;
 import org.opentcs.drivers.vehicle.management.VehicleProcessModelTO;
-import org.opentcs.virtualvehicle.LoopbackVehicleModelTO;
 import com.google.inject.assistedinject.Assisted;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,8 +26,6 @@ import org.opentcs.drivers.vehicle.AdapterCommand;
 import org.opentcs.drivers.vehicle.LoadHandlingDevice;
 import org.opentcs.drivers.vehicle.VehicleCommAdapterEvent;
 import org.opentcs.drivers.vehicle.VehicleProcessModel;
-import org.opentcs.drivers.vehicle.management.VehicleCommAdapterPanel;
-import org.opentcs.drivers.vehicle.management.VehicleProcessModelTO;
 import org.opentcs.util.CallWrapper;
 import org.opentcs.util.Comparators;
 import org.opentcs.util.gui.StringListCellRenderer;
@@ -35,7 +33,6 @@ import static org.opentcs.virtualvehicle.I18nLoopbackCommAdapter.BUNDLE_PATH;
 import org.opentcs.virtualvehicle.commands.CurrentMovementCommandFailedCommand;
 import org.opentcs.virtualvehicle.commands.PublishEventCommand;
 import org.opentcs.virtualvehicle.commands.SetEnergyLevelCommand;
-import org.opentcs.virtualvehicle.commands.SetLoadHandlingDevicesCommand;
 import org.opentcs.virtualvehicle.commands.SetOrientationAngleCommand;
 import org.opentcs.virtualvehicle.commands.SetPositionCommand;
 import org.opentcs.virtualvehicle.commands.SetPrecisePositionCommand;
@@ -55,12 +52,14 @@ import org.slf4j.LoggerFactory;
 
 public class CommAdapterPanel extends VehicleCommAdapterPanel {
 
-    private ProcessModelTO processModel;
+    private final static Logger logger = LoggerFactory.getLogger(CommAdapter.class);
+
+    private VehicleModelTO processModel;
     private final VehicleService vehicleService;
     private final CallWrapper callWrapper;
 
     @Inject
-    public CommAdapterPanel(@Assisted ProcessModelTO processModel,
+    public CommAdapterPanel(VehicleModelTO processModel,
                                     @Assisted VehicleService vehicleService,
                                     @ServiceCallWrapper CallWrapper callWrapper) {
 
@@ -73,11 +72,11 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
     }
 
     @Override
-    public void processModelChange(String attributeChanged, VehicleProcessModelTO modelTO) {
-        if (!(modelTO instanceof ProcessModelTO)) {
+    public void processModelChange(String attributeChanged, VehicleProcessModelTO processModel) {
+        if (!(processModel instanceof VehicleModelTO)) {
             return;
         }
-        processModel = (ProcessModelTO) modelTO;
+        this.processModel = (VehicleModelTO) processModel;
     }
 
     private void initGuiContent() {
@@ -97,6 +96,9 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         vehicleBahaviourPanel = new javax.swing.JPanel();
         PropsPowerOuterContainerPanel = new javax.swing.JPanel();
         PropsPowerInnerContainerPanel = new javax.swing.JPanel();
+
+
+
         vehiclePropsPanel = new javax.swing.JPanel();
         maxFwdVeloLbl = new javax.swing.JLabel();
         maxFwdVeloTxt = new javax.swing.JTextField();
@@ -157,7 +159,8 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         jPanel2 = new javax.swing.JPanel();
         lHDCheckbox = new javax.swing.JCheckBox();
 
-        setName("LoopbackCommunicationAdapterPanel"); // NOI18N
+//        setName("CommAdapterPanel"); // NOI18N
+        setName("LoopbackCommunicationAdapterPanel");
         setLayout(new java.awt.BorderLayout());
 
         vehicleBahaviourPanel.setLayout(new java.awt.BorderLayout());
@@ -736,7 +739,7 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         lHDCheckbox.setText("Device loaded");
         lHDCheckbox.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                lHDCheckboxClicked(evt);
+//                lHDCheckboxClicked(evt);
             }
         });
         jPanel2.add(lHDCheckbox);
@@ -747,7 +750,9 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
 
         add(vehicleStatePanel, java.awt.BorderLayout.WEST);
 
-        getAccessibleContext().setAccessibleName(bundle.getString("loopbackCommAdapterPanel.accessibleName")); // NOI18N
+        // TODO 标签页名称
+//        getAccessibleContext().setAccessibleName(bundle.getString("loopbackCommAdapterPanel.accessibleName")); // NOI18N
+        getAccessibleContext().setAccessibleName("创智选项"); // NOI18N
     }
 
     private javax.swing.JPanel PropsPowerInnerContainerPanel;
@@ -814,103 +819,41 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
     private javax.swing.JPanel vehicleBahaviourPanel;
     private javax.swing.JPanel vehiclePropsPanel;
     private javax.swing.JPanel vehicleStatePanel;
-}
-
-
-/**
- * The panel corresponding to the LoopbackCommunicationAdapter.
- *
- * @author Iryna Felko (Fraunhofer IML)
- * @author Stefan Walter (Fraunhofer IML)
- * @author Martin Grzenia (Fraunhofer IML)
- */
-public class LoopbackCommAdapterPanel
-        extends VehicleCommAdapterPanel {
-
-    /**
-     * The resource bundle.
-     */
     private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_PATH);
-    /**
-     * This class's Logger.
-     */
-    private static final Logger LOG = LoggerFactory.getLogger(LoopbackCommAdapterPanel.class);
-    /**
-     * The vehicle service used for interaction with the comm adapter.
-     */
-    private final VehicleService vehicleService;
-    /**
-     *  The comm adapter's process model.
-     */
-    private final CallWrapper callWrapper;
-
-    /**
-     * Creates new LoopbackCommunicationAdapterPanel.
-     *
-     * @param processModel The comm adapter's process model.
-     * @param vehicleService The vehicle service.
-     * @param callWrapper The call wrapper to use for service calls.
-     */
-    @Inject
-    public LoopbackCommAdapterPanel(@Assisted LoopbackVehicleModelTO processModel,
-                                    @Assisted VehicleService vehicleService,
-                                    @ServiceCallWrapper CallWrapper callWrapper) {
-
-        this.processModel = requireNonNull(processModel, "processModel");
-        this.vehicleService = requireNonNull(vehicleService, "vehicleService");
-        this.callWrapper = requireNonNull(callWrapper, "callWrapper");
-
-        initComponents();
-        initGuiContent();
-    }
-
-    @Override
-    public void processModelChange(String attributeChanged, VehicleProcessModelTO newProcessModel) {
-        if (!(newProcessModel instanceof LoopbackVehicleModelTO)) {
-            return;
-        }
-
-        processModel = (ProcessModelTO) newProcessModel;
-        updateLoopbackVehicleModelData(attributeChanged, processModel);
-        updateVehicleProcessModelData(attributeChanged, processModel);
-    }
 
 
-
-    private void updateLoopbackVehicleModelData(String attributeChanged,
-                                                LoopbackVehicleModelTO processModel) {
+    private void updateVehicleModelData(String attributeChanged, VehicleModelTO processModel) {
         if (Objects.equals(attributeChanged,
-                LoopbackVehicleModel.Attribute.OPERATING_TIME.name())) {
+                Attribute.OPERATING_TIME.name())) {
             updateOperatingTime(processModel.getOperatingTime());
         }
         else if (Objects.equals(attributeChanged,
-                LoopbackVehicleModel.Attribute.ACCELERATION.name())) {
+                Attribute.ACCELERATION.name())) {
             updateMaxAcceleration(processModel.getMaxAcceleration());
         }
         else if (Objects.equals(attributeChanged,
-                LoopbackVehicleModel.Attribute.DECELERATION.name())) {
+                Attribute.DECELERATION.name())) {
             updateMaxDeceleration(processModel.getMaxDeceleration());
         }
         else if (Objects.equals(attributeChanged,
-                LoopbackVehicleModel.Attribute.MAX_FORWARD_VELOCITY.name())) {
+                Attribute.MAX_FORWARD_VELOCITY.name())) {
             updateMaxForwardVelocity(processModel.getMaxFwdVelocity());
         }
         else if (Objects.equals(attributeChanged,
-                LoopbackVehicleModel.Attribute.MAX_REVERSE_VELOCITY.name())) {
+                Attribute.MAX_REVERSE_VELOCITY.name())) {
             updateMaxReverseVelocity(processModel.getMaxRevVelocity());
         }
         else if (Objects.equals(attributeChanged,
-                LoopbackVehicleModel.Attribute.SINGLE_STEP_MODE.name())) {
+                Attribute.SINGLE_STEP_MODE.name())) {
             updateSingleStepMode(processModel.isSingleStepModeEnabled());
         }
         else if (Objects.equals(attributeChanged,
-                LoopbackVehicleModel.Attribute.VEHICLE_PAUSED.name())) {
+                Attribute.VEHICLE_PAUSED.name())) {
             updateVehiclePaused(processModel.isVehiclePaused());
         }
     }
 
-    private void updateVehicleProcessModelData(String attributeChanged,
-                                               VehicleProcessModelTO processModel) {
+    private void updateVehicleProcessModelData(String attributeChanged, VehicleModelTO processModel) {
         if (Objects.equals(attributeChanged,
                 VehicleProcessModel.Attribute.COMM_ADAPTER_ENABLED.name())) {
             updateCommAdapterEnabled(processModel.isCommAdapterEnabled());
@@ -943,7 +886,7 @@ public class LoopbackCommAdapterPanel
 
     private void updateVehicleLoadHandlingDevice(List<LoadHandlingDevice> devices) {
         if (devices.size() > 1) {
-            LOG.warn("size of load handling devices greater than 1 ({})", devices.size());
+            logger.warn("size of load handling devices greater than 1 ({})", devices.size());
         }
         boolean loaded = devices.stream()
                 .findFirst()
@@ -979,7 +922,7 @@ public class LoopbackCommAdapterPanel
                 }
             }
             catch (Exception ex) {
-                LOG.warn("Error fetching points", ex);
+                logger.warn("Error fetching points", ex);
             }
         });
     }
@@ -1052,8 +995,8 @@ public class LoopbackCommAdapterPanel
 
     private TCSObjectReference<Vehicle> getVehicleReference()
             throws Exception {
-        return callWrapper.call(() -> vehicleService.
-                fetchObject(Vehicle.class, processModel.getVehicleName())).getReference();
+        System.out.println("##################processModel.getVehicleName(): " + processModel.getVehicleName());
+        return callWrapper.call(() -> vehicleService.fetchObject(Vehicle.class, processModel.getVehicleName())).getReference();
     }
 
     private void sendCommAdapterCommand(AdapterCommand command) {
@@ -1062,7 +1005,7 @@ public class LoopbackCommAdapterPanel
             callWrapper.call(() -> vehicleService.sendCommAdapterCommand(vehicleRef, command));
         }
         catch (Exception ex) {
-            LOG.warn("Error sending comm adapter command '{}'", command, ex);
+            logger.warn("Error sending comm adapter command '{}'", command, ex);
         }
     }
 
@@ -1072,667 +1015,7 @@ public class LoopbackCommAdapterPanel
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
-        modeButtonGroup = new javax.swing.ButtonGroup();
-        propertyEditorGroup = new javax.swing.ButtonGroup();
-        vehicleBahaviourPanel = new javax.swing.JPanel();
-        PropsPowerOuterContainerPanel = new javax.swing.JPanel();
-        PropsPowerInnerContainerPanel = new javax.swing.JPanel();
-        vehiclePropsPanel = new javax.swing.JPanel();
-        maxFwdVeloLbl = new javax.swing.JLabel();
-        maxFwdVeloTxt = new javax.swing.JTextField();
-        maxFwdVeloUnitLbl = new javax.swing.JLabel();
-        maxRevVeloLbl = new javax.swing.JLabel();
-        maxRevVeloTxt = new javax.swing.JTextField();
-        maxRevVeloUnitLbl = new javax.swing.JLabel();
-        maxAccelLbl = new javax.swing.JLabel();
-        maxAccelTxt = new javax.swing.JTextField();
-        maxAccelUnitLbl = new javax.swing.JLabel();
-        maxDecelTxt = new javax.swing.JTextField();
-        maxDecelLbl = new javax.swing.JLabel();
-        maxDecelUnitLbl = new javax.swing.JLabel();
-        defaultOpTimeLbl = new javax.swing.JLabel();
-        defaultOpTimeUntiLbl = new javax.swing.JLabel();
-        opTimeTxt = new javax.swing.JTextField();
-        profilesContainerPanel = new javax.swing.JPanel();
-        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 0));
-        vehicleStatePanel = new javax.swing.JPanel();
-        stateContainerPanel = new javax.swing.JPanel();
-        connectionPanel = new javax.swing.JPanel();
-        chkBoxEnable = new javax.swing.JCheckBox();
-        curPosPanel = new javax.swing.JPanel();
-        energyLevelTxt = new javax.swing.JTextField();
-        energyLevelLbl = new javax.swing.JLabel();
-        pauseVehicleCheckBox = new javax.swing.JCheckBox();
-        orientationAngleLbl = new javax.swing.JLabel();
-        precisePosUnitLabel = new javax.swing.JLabel();
-        orientationAngleTxt = new javax.swing.JTextField();
-        energyLevelLabel = new javax.swing.JLabel();
-        orientationLabel = new javax.swing.JLabel();
-        positionTxt = new javax.swing.JTextField();
-        positionLabel = new javax.swing.JLabel();
-        pauseVehicleLabel = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        stateTxt = new javax.swing.JTextField();
-        jLabel3 = new javax.swing.JLabel();
-        precisePosTextArea = new javax.swing.JTextArea();
-        propertySetterPanel = new javax.swing.JPanel();
-        keyLabel = new javax.swing.JLabel();
-        valueTextField = new javax.swing.JTextField();
-        propSetButton = new javax.swing.JButton();
-        removePropRadioBtn = new javax.swing.JRadioButton();
-        setPropValueRadioBtn = new javax.swing.JRadioButton();
-        jPanel3 = new javax.swing.JPanel();
-        keyTextField = new javax.swing.JTextField();
-        eventPanel = new javax.swing.JPanel();
-        includeAppendixCheckBox = new javax.swing.JCheckBox();
-        appendixTxt = new javax.swing.JTextField();
-        dispatchEventButton = new javax.swing.JButton();
-        dispatchCommandFailedButton = new javax.swing.JButton();
-        controlTabPanel = new javax.swing.JPanel();
-        singleModeRadioButton = new javax.swing.JRadioButton();
-        flowModeRadioButton = new javax.swing.JRadioButton();
-        triggerButton = new javax.swing.JButton();
-        loadDevicePanel = new javax.swing.JPanel();
-        jPanel1 = new javax.swing.JPanel();
-        jPanel2 = new javax.swing.JPanel();
-        lHDCheckbox = new javax.swing.JCheckBox();
-
-        setName("LoopbackCommunicationAdapterPanel"); // NOI18N
-        setLayout(new java.awt.BorderLayout());
-
-        vehicleBahaviourPanel.setLayout(new java.awt.BorderLayout());
-
-        PropsPowerOuterContainerPanel.setLayout(new java.awt.BorderLayout());
-
-        PropsPowerInnerContainerPanel.setLayout(new javax.swing.BoxLayout(PropsPowerInnerContainerPanel, javax.swing.BoxLayout.X_AXIS));
-
-        vehiclePropsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(BUNDLE.getString("loopbackCommAdapterPanel.panel_vehicleProperties.border.title"))); // NOI18N
-        vehiclePropsPanel.setLayout(new java.awt.GridBagLayout());
-
-        maxFwdVeloLbl.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        maxFwdVeloLbl.setText(BUNDLE.getString("loopbackCommAdapterPanel.label_maximumForwardVelocity.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxFwdVeloLbl, gridBagConstraints);
-
-        maxFwdVeloTxt.setEditable(false);
-        maxFwdVeloTxt.setColumns(5);
-        maxFwdVeloTxt.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        maxFwdVeloTxt.setText("0");
-        maxFwdVeloTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        maxFwdVeloTxt.setEnabled(false);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxFwdVeloTxt, gridBagConstraints);
-
-        maxFwdVeloUnitLbl.setText("mm/s");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxFwdVeloUnitLbl, gridBagConstraints);
-
-        maxRevVeloLbl.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        maxRevVeloLbl.setText(BUNDLE.getString("loopbackCommAdapterPanel.label_maximumReverseVelocity.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxRevVeloLbl, gridBagConstraints);
-
-        maxRevVeloTxt.setEditable(false);
-        maxRevVeloTxt.setColumns(5);
-        maxRevVeloTxt.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        maxRevVeloTxt.setText("0");
-        maxRevVeloTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        maxRevVeloTxt.setEnabled(false);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxRevVeloTxt, gridBagConstraints);
-
-        maxRevVeloUnitLbl.setText("mm/s");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxRevVeloUnitLbl, gridBagConstraints);
-
-        maxAccelLbl.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        maxAccelLbl.setText(BUNDLE.getString("loopbackCommAdapterPanel.label_maximumAcceleration.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxAccelLbl, gridBagConstraints);
-
-        maxAccelTxt.setEditable(false);
-        maxAccelTxt.setColumns(5);
-        maxAccelTxt.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        maxAccelTxt.setText("1000");
-        maxAccelTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        maxAccelTxt.setEnabled(false);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxAccelTxt, gridBagConstraints);
-
-        maxAccelUnitLbl.setText("<html>mm/s<sup>2</sup>");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxAccelUnitLbl, gridBagConstraints);
-
-        maxDecelTxt.setEditable(false);
-        maxDecelTxt.setColumns(5);
-        maxDecelTxt.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        maxDecelTxt.setText("1000");
-        maxDecelTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        maxDecelTxt.setEnabled(false);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxDecelTxt, gridBagConstraints);
-
-        maxDecelLbl.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        maxDecelLbl.setText(BUNDLE.getString("loopbackCommAdapterPanel.label_maximumDeceleration.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxDecelLbl, gridBagConstraints);
-
-        maxDecelUnitLbl.setText("<html>mm/s<sup>2</sup>");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(maxDecelUnitLbl, gridBagConstraints);
-
-        defaultOpTimeLbl.setText(BUNDLE.getString("loopbackCommAdapterPanel.label_operatingTime.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(defaultOpTimeLbl, gridBagConstraints);
-
-        defaultOpTimeUntiLbl.setText("ms");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(defaultOpTimeUntiLbl, gridBagConstraints);
-
-        opTimeTxt.setEditable(false);
-        opTimeTxt.setColumns(5);
-        opTimeTxt.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        opTimeTxt.setText("1000");
-        opTimeTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        opTimeTxt.setEnabled(false);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        vehiclePropsPanel.add(opTimeTxt, gridBagConstraints);
-
-        PropsPowerInnerContainerPanel.add(vehiclePropsPanel);
-
-        PropsPowerOuterContainerPanel.add(PropsPowerInnerContainerPanel, java.awt.BorderLayout.WEST);
-
-        vehicleBahaviourPanel.add(PropsPowerOuterContainerPanel, java.awt.BorderLayout.NORTH);
-
-        profilesContainerPanel.setLayout(new java.awt.BorderLayout());
-        profilesContainerPanel.add(filler1, java.awt.BorderLayout.CENTER);
-
-        vehicleBahaviourPanel.add(profilesContainerPanel, java.awt.BorderLayout.SOUTH);
-
-        add(vehicleBahaviourPanel, java.awt.BorderLayout.CENTER);
-
-        vehicleStatePanel.setLayout(new java.awt.BorderLayout());
-
-        stateContainerPanel.setLayout(new javax.swing.BoxLayout(stateContainerPanel, javax.swing.BoxLayout.Y_AXIS));
-
-        connectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(BUNDLE.getString("loopbackCommAdapterPanel.panel_adapterStatus.border.title"))); // NOI18N
-        connectionPanel.setName("connectionPanel"); // NOI18N
-        connectionPanel.setLayout(new java.awt.GridBagLayout());
-
-        chkBoxEnable.setText(BUNDLE.getString("loopbackCommAdapterPanel.checkBox_enableAdapter.text")); // NOI18N
-        chkBoxEnable.setName("chkBoxEnable"); // NOI18N
-        chkBoxEnable.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                chkBoxEnableActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        connectionPanel.add(chkBoxEnable, gridBagConstraints);
-
-        stateContainerPanel.add(connectionPanel);
-
-        curPosPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(BUNDLE.getString("loopbackCommAdapterPanel.panel_vehicleStatus.border.title"))); // NOI18N
-        curPosPanel.setName("curPosPanel"); // NOI18N
-        curPosPanel.setLayout(new java.awt.GridBagLayout());
-
-        energyLevelTxt.setEditable(false);
-        energyLevelTxt.setBackground(new java.awt.Color(255, 255, 255));
-        energyLevelTxt.setText("100");
-        energyLevelTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        energyLevelTxt.setName("energyLevelTxt"); // NOI18N
-        energyLevelTxt.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                energyLevelTxtMouseClicked(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(3, 0, 0, 0);
-        curPosPanel.add(energyLevelTxt, gridBagConstraints);
-
-        energyLevelLbl.setText("%");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
-        curPosPanel.add(energyLevelLbl, gridBagConstraints);
-
-        pauseVehicleCheckBox.setEnabled(false);
-        pauseVehicleCheckBox.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        pauseVehicleCheckBox.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
-        pauseVehicleCheckBox.setName("pauseVehicleCheckBox"); // NOI18N
-        pauseVehicleCheckBox.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                pauseVehicleCheckBoxItemStateChanged(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        curPosPanel.add(pauseVehicleCheckBox, gridBagConstraints);
-
-        orientationAngleLbl.setText("<html>&#186;");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
-        curPosPanel.add(orientationAngleLbl, gridBagConstraints);
-
-        precisePosUnitLabel.setText("mm");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
-        curPosPanel.add(precisePosUnitLabel, gridBagConstraints);
-
-        orientationAngleTxt.setEditable(false);
-        orientationAngleTxt.setBackground(new java.awt.Color(255, 255, 255));
-        java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("i18n/org/opentcs/commadapter/loopback/Bundle"); // NOI18N
-        orientationAngleTxt.setText(bundle.getString("loopbackCommAdapterPanel.textField_orientationAngle.angleNotSetPlaceholder")); // NOI18N
-        orientationAngleTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        orientationAngleTxt.setName("orientationAngleTxt"); // NOI18N
-        orientationAngleTxt.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                orientationAngleTxtMouseClicked(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 0, 0, 0);
-        curPosPanel.add(orientationAngleTxt, gridBagConstraints);
-
-        energyLevelLabel.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        energyLevelLabel.setText(bundle.getString("loopbackCommAdapterPanel.label_energyLevel.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 0, 3);
-        curPosPanel.add(energyLevelLabel, gridBagConstraints);
-
-        orientationLabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        orientationLabel.setText(bundle.getString("loopbackCommAdapterPanel.label_orientationAngle.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 0, 3);
-        curPosPanel.add(orientationLabel, gridBagConstraints);
-
-        positionTxt.setEditable(false);
-        positionTxt.setBackground(new java.awt.Color(255, 255, 255));
-        positionTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        positionTxt.setName("positionTxt"); // NOI18N
-        positionTxt.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                positionTxtMouseClicked(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        curPosPanel.add(positionTxt, gridBagConstraints);
-
-        positionLabel.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        positionLabel.setText(bundle.getString("loopbackCommAdapterPanel.label_position.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 0, 3);
-        curPosPanel.add(positionLabel, gridBagConstraints);
-
-        pauseVehicleLabel.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        pauseVehicleLabel.setText(bundle.getString("loopbackCommAdapterPanel.label_pauseVehicle.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 0, 3);
-        curPosPanel.add(pauseVehicleLabel, gridBagConstraints);
-
-        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jLabel2.setText(bundle.getString("loopbackCommAdapterPanel.label_state.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 0, 3);
-        curPosPanel.add(jLabel2, gridBagConstraints);
-
-        stateTxt.setEditable(false);
-        stateTxt.setBackground(new java.awt.Color(255, 255, 255));
-        stateTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        stateTxt.setName("stateTxt"); // NOI18N
-        stateTxt.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                stateTxtMouseClicked(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(3, 0, 0, 0);
-        curPosPanel.add(stateTxt, gridBagConstraints);
-
-        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jLabel3.setText(bundle.getString("loopbackCommAdapterPanel.label_precisePosition.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 0, 3);
-        curPosPanel.add(jLabel3, gridBagConstraints);
-
-        precisePosTextArea.setEditable(false);
-        precisePosTextArea.setFont(positionTxt.getFont());
-        precisePosTextArea.setRows(3);
-        precisePosTextArea.setText("X:\nY:\nZ:");
-        precisePosTextArea.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        precisePosTextArea.setName("precisePosTextArea"); // NOI18N
-        precisePosTextArea.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                precisePosTextAreaMouseClicked(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(3, 0, 0, 0);
-        curPosPanel.add(precisePosTextArea, gridBagConstraints);
-
-        stateContainerPanel.add(curPosPanel);
-        curPosPanel.getAccessibleContext().setAccessibleName("Change");
-
-        propertySetterPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("loopbackCommAdapterPanel.panel_vehicleProperty.border.title"))); // NOI18N
-        propertySetterPanel.setLayout(new java.awt.GridBagLayout());
-
-        keyLabel.setText(bundle.getString("loopbackCommAdapterPanel.label_propertyKey.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
-        propertySetterPanel.add(keyLabel, gridBagConstraints);
-
-        valueTextField.setMaximumSize(new java.awt.Dimension(4, 18));
-        valueTextField.setMinimumSize(new java.awt.Dimension(4, 18));
-        valueTextField.setPreferredSize(new java.awt.Dimension(100, 20));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
-        propertySetterPanel.add(valueTextField, gridBagConstraints);
-
-        propSetButton.setText(bundle.getString("loopbackCommAdapterPanel.button_setProperty.text")); // NOI18N
-        propSetButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                propSetButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 2;
-        propertySetterPanel.add(propSetButton, gridBagConstraints);
-
-        propertyEditorGroup.add(removePropRadioBtn);
-        removePropRadioBtn.setText(bundle.getString("loopbackCommAdapterPanel.radioButton_removeProperty.text")); // NOI18N
-        removePropRadioBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                removePropRadioBtnActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        propertySetterPanel.add(removePropRadioBtn, gridBagConstraints);
-
-        propertyEditorGroup.add(setPropValueRadioBtn);
-        setPropValueRadioBtn.setSelected(true);
-        setPropValueRadioBtn.setText(bundle.getString("loopbackCommAdapterPanel.radioButton_setProperty.text")); // NOI18N
-        setPropValueRadioBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                setPropValueRadioBtnActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        propertySetterPanel.add(setPropValueRadioBtn, gridBagConstraints);
-
-        jPanel3.setLayout(new java.awt.GridBagLayout());
-
-        keyTextField.setPreferredSize(new java.awt.Dimension(100, 20));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        jPanel3.add(keyTextField, gridBagConstraints);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        propertySetterPanel.add(jPanel3, gridBagConstraints);
-
-        stateContainerPanel.add(propertySetterPanel);
-
-        eventPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("loopbackCommAdapterPanel.panel_eventDispatching.title"))); // NOI18N
-        eventPanel.setLayout(new java.awt.GridBagLayout());
-
-        includeAppendixCheckBox.setText(bundle.getString("loopbackCommAdapterPanel.checkBox_includeAppendix.text")); // NOI18N
-        includeAppendixCheckBox.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                includeAppendixCheckBoxItemStateChanged(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.weightx = 1.0;
-        eventPanel.add(includeAppendixCheckBox, gridBagConstraints);
-
-        appendixTxt.setEditable(false);
-        appendixTxt.setColumns(10);
-        appendixTxt.setText("XYZ");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
-        eventPanel.add(appendixTxt, gridBagConstraints);
-
-        dispatchEventButton.setText(bundle.getString("loopbackCommAdapterPanel.button_dispatchEvent.text")); // NOI18N
-        dispatchEventButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                dispatchEventButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
-        eventPanel.add(dispatchEventButton, gridBagConstraints);
-
-        dispatchCommandFailedButton.setText(bundle.getString("loopbackCommAdapterPanel.button_failCurrentCommand.text")); // NOI18N
-        dispatchCommandFailedButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                dispatchCommandFailedButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
-        eventPanel.add(dispatchCommandFailedButton, gridBagConstraints);
-
-        stateContainerPanel.add(eventPanel);
-
-        controlTabPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(BUNDLE.getString("loopbackCommAdapterPanel.panel_commandProcessing.border.title"))); // NOI18N
-        controlTabPanel.setLayout(new java.awt.GridBagLayout());
-
-        modeButtonGroup.add(singleModeRadioButton);
-        singleModeRadioButton.setText(BUNDLE.getString("loopbackCommAdapterPanel.checkBox_commandProcessingManual.text")); // NOI18N
-        singleModeRadioButton.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        singleModeRadioButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        singleModeRadioButton.setName("singleModeRadioButton"); // NOI18N
-        singleModeRadioButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                singleModeRadioButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
-        controlTabPanel.add(singleModeRadioButton, gridBagConstraints);
-
-        modeButtonGroup.add(flowModeRadioButton);
-        flowModeRadioButton.setSelected(true);
-        flowModeRadioButton.setText(BUNDLE.getString("loopbackCommAdapterPanel.checkBox_commandProcessingAutomatic.text")); // NOI18N
-        flowModeRadioButton.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        flowModeRadioButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        flowModeRadioButton.setName("flowModeRadioButton"); // NOI18N
-        flowModeRadioButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                flowModeRadioButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
-        controlTabPanel.add(flowModeRadioButton, gridBagConstraints);
-
-        triggerButton.setText(BUNDLE.getString("loopbackCommAdapterPanel.button_nextStep.text")); // NOI18N
-        triggerButton.setEnabled(false);
-        triggerButton.setName("triggerButton"); // NOI18N
-        triggerButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                triggerButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 3);
-        controlTabPanel.add(triggerButton, gridBagConstraints);
-
-        stateContainerPanel.add(controlTabPanel);
-
-        vehicleStatePanel.add(stateContainerPanel, java.awt.BorderLayout.NORTH);
-
-        loadDevicePanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("loopbackCommAdapterPanel.panel_loadHandlingDevice.border.title"))); // NOI18N
-        loadDevicePanel.setLayout(new java.awt.BorderLayout());
-
-        jPanel1.setLayout(new java.awt.GridBagLayout());
-        loadDevicePanel.add(jPanel1, java.awt.BorderLayout.SOUTH);
-
-        lHDCheckbox.setText("Device loaded");
-        lHDCheckbox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                lHDCheckboxClicked(evt);
-            }
-        });
-        jPanel2.add(lHDCheckbox);
-
-        loadDevicePanel.add(jPanel2, java.awt.BorderLayout.WEST);
-
-        vehicleStatePanel.add(loadDevicePanel, java.awt.BorderLayout.CENTER);
-
-        add(vehicleStatePanel, java.awt.BorderLayout.WEST);
-
-        getAccessibleContext().setAccessibleName(bundle.getString("loopbackCommAdapterPanel.accessibleName")); // NOI18N
-    }// </editor-fold>//GEN-END:initComponents
 
     private void singleModeRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_singleModeRadioButtonActionPerformed
         if (singleModeRadioButton.isSelected()) {
@@ -1757,6 +1040,7 @@ public class LoopbackCommAdapterPanel
 
     private void chkBoxEnableActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chkBoxEnableActionPerformed
         try {
+            System.out.println("####################chkBoxEnableActionPerformed：" + processModel.getVehicleName());
             Vehicle vehicle = callWrapper.call(() -> vehicleService.fetchObject(Vehicle.class, processModel.getVehicleName()));
 
             if (chkBoxEnable.isSelected()) {
@@ -1769,7 +1053,7 @@ public class LoopbackCommAdapterPanel
             setStatePanelEnabled(chkBoxEnable.isSelected());
         }
         catch (Exception ex) {
-            LOG.warn("Error enabling/disabling comm adapter", ex);
+            logger.warn("Error enabling/disabling comm adapter", ex);
         }
     }//GEN-LAST:event_chkBoxEnableActionPerformed
 
@@ -1851,7 +1135,7 @@ public class LoopbackCommAdapterPanel
             pointSet = callWrapper.call(() -> vehicleService.fetchObjects(Point.class));
         }
         catch (Exception ex) {
-            LOG.warn("Error fetching points", ex);
+            logger.warn("Error fetching points", ex);
             return;
         }
 
@@ -1869,8 +1153,7 @@ public class LoopbackCommAdapterPanel
             }
         }
         // Create panel and dialog
-        InputPanel panel = new DropdownListInputPanel.Builder<>(
-                BUNDLE.getString("loopbackCommAdapterPanel.dialog_setPosition.title"), pointList)
+        InputPanel panel = new DropdownListInputPanel.Builder<>(BUNDLE.getString("loopbackCommAdapterPanel.dialog_setPosition.title"), pointList)
                 .setLabel(BUNDLE.getString("loopbackCommAdapterPanel.label_position.text"))
                 .setEditable(true)
                 .setInitialSelection(currentPoint)
@@ -1925,7 +1208,7 @@ public class LoopbackCommAdapterPanel
                     angle = Double.parseDouble(input);
                 }
                 catch (NumberFormatException e) {
-                    LOG.warn("Exception parsing orientation angle value '{}'", input, e);
+                    logger.warn("Exception parsing orientation angle value '{}'", input, e);
                     return;
                 }
 
@@ -2002,20 +1285,18 @@ public class LoopbackCommAdapterPanel
         valueTextField.setEnabled(true);
     }//GEN-LAST:event_setPropValueRadioBtnActionPerformed
 
-    private void lHDCheckboxClicked(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lHDCheckboxClicked
-        List<LoadHandlingDevice> devices = Arrays.asList(
-                new LoadHandlingDevice(LoopbackCommunicationAdapter.LHD_NAME, lHDCheckbox.isSelected()));
-        sendCommAdapterCommand(new SetLoadHandlingDevicesCommand(devices));
-    }//GEN-LAST:event_lHDCheckboxClicked
+//    private void lHDCheckboxClicked(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lHDCheckboxClicked
+//        List<LoadHandlingDevice> devices = Arrays.asList(
+//                new LoadHandlingDevice(LoopbackCommunicationAdapter.LHD_NAME, lHDCheckbox.isSelected()));
+//        sendCommAdapterCommand(new SetLoadHandlingDevicesCommand(devices));
+//    }//GEN-LAST:event_lHDCheckboxClicked
 
     /**
      * Set the specified precise position to the text area. The method takes care
      * of the formatting. If any of the parameters is null all values will be set
      * to the "clear"-value.
      *
-     * @param x x-position
-     * @param y y-position
-     * @param z z-poition
+     * @param precisePos
      */
     private void setPrecisePosText(Triple precisePos) {
         // Convert values to strings

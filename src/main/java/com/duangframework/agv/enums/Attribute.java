@@ -18,5 +18,41 @@ public enum Attribute {
     DISCONNECTING_ON_IDLE,
     RECONNECTING_ON_CONNECTION_LOSS,
     LOGGING_ENABLED,
-    RECONNECT_DELAY;
+    RECONNECT_DELAY,
+
+
+    /**
+     * Indicates a change of the virtual vehicle's single step mode setting.
+     */
+    SINGLE_STEP_MODE,
+    /**
+     * Indicates a change of the virtual vehicle's default operating time.
+     */
+    OPERATING_TIME,
+    /**
+     * Indicates a change of the virtual vehicle's maximum acceleration.
+     */
+    ACCELERATION,
+    /**
+     * Indicates a change of the virtual vehicle's maximum deceleration.
+     */
+    DECELERATION,
+    /**
+     * Indicates a change of the virtual vehicle's maximum forward velocity.
+     */
+    MAX_FORWARD_VELOCITY,
+    /**
+     * Indicates a change of the virtual vehicle's maximum reverse velocity.
+     */
+    MAX_REVERSE_VELOCITY,
+    /**
+     * Indicates a change of the virtual vehicle's paused setting.
+     */
+    VEHICLE_PAUSED,
+    /**
+     * Indicates a change of the virtual vehicle's velocity history.
+     */
+    VELOCITY_HISTORY,
+
+    ;
 }

@@ -63,7 +63,12 @@ public class CommAdapterFactory implements VehicleCommAdapterFactory {
     @Override
     @Deprecated
     public String getAdapterDescription() {
-        return PropKit.get("adapter.name", "MyAdapter");
+        return getDescription().getDescription();
+    }
+
+    @Override
+    public CommAdapterDescription getDescription() {
+        return new CommAdapterDescription();
     }
 
     @Override

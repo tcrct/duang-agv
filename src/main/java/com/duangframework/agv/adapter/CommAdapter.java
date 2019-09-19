@@ -7,6 +7,7 @@ import com.duangframework.agv.kit.ObjectKit;
 import com.duangframework.agv.kit.PropKit;
 import com.duangframework.agv.kit.ToolsKit;
 import com.duangframework.agv.model.ProcessModel;
+import com.duangframework.agv.model.VehicleModelTO;
 import com.google.inject.assistedinject.Assisted;
 import org.opentcs.components.kernel.services.TCSObjectService;
 import org.opentcs.contrib.tcp.netty.TcpClientChannelManager;
@@ -17,6 +18,7 @@ import org.opentcs.drivers.vehicle.BasicVehicleCommAdapter;
 import org.opentcs.drivers.vehicle.MovementCommand;
 import org.opentcs.util.Comparators;
 import org.opentcs.util.ExplainedBoolean;
+import org.opentcs.virtualvehicle.LoopbackVehicleModelTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,16 +180,17 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         List<Point> pointList = new ArrayList<>(pointSet);
         Collections.sort(pointList, Comparators.objectsByName());
         pointList.add(0, null);
-
         for(Point point : pointList) {
-            System.out.println(point.getName());
+            if(null != point) {
+                getProcessModel().setVehiclePosition(point.getName());
+            }
         }
 
 
 
 //        getProcessModel().setVehiclePosition(((Point) item).getName());
         // TODO 可以改为下拉选择的方式 ，待完成，目前先将起点位置设置为Point-0001
-        getProcessModel().setVehiclePosition("Point-0001");
+//        getProcessModel().setVehiclePosition("Point-0001");
         getProcessModel().setVehicleState(Vehicle.State.IDLE);
         getProcessModel().setVehicleIdle(true);
 
@@ -291,13 +294,32 @@ public class CommAdapter extends BasicVehicleCommAdapter {
             getProcessModel().setVehiclePosition(currentPosition);
         }
         // Update GUI.
-        synchronized (CommAdapter.this) {
+//        synchronized (CommAdapter.this) {
             MovementCommand cmd = getSentQueue().poll();
             cmdIds.remove(cmd);
             getProcessModel().commandExecuted(cmd);
             // 唤醒处于等待状态的线程
-            CommAdapter.this.notify();
-        }
+//            CommAdapter.this.notify();
+//        }
+    }
+
+    /**
+     * 必须实现，用于将值传递到控制中心的自定义面板
+     * @return
+     */
+    @Override
+    protected VehicleModelTO createCustomTransferableProcessModel() {
+        // 发送到其他软件（如控制中心或工厂概览）时，添加车辆的附加信息
+        return new VehicleModelTO()
+                .setLoadOperation(getProcessModel().getLoadOperation())
+                .setMaxAcceleration(getProcessModel().getMaxAcceleration())
+                .setMaxDeceleration(getProcessModel().getMaxDecceleration())
+                .setMaxFwdVelocity(getProcessModel().getMaxFwdVelocity())
+                .setMaxRevVelocity(getProcessModel().getMaxRevVelocity())
+                .setOperatingTime(getProcessModel().getOperatingTime())
+                .setSingleStepModeEnabled(getProcessModel().isSingleStepModeEnabled())
+                .setUnloadOperation(getProcessModel().getUnloadOperation())
+                .setVehiclePaused(getProcessModel().isVehiclePaused());
     }
 
 }

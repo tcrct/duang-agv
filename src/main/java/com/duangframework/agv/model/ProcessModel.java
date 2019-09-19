@@ -1,6 +1,7 @@
 package com.duangframework.agv.model;
 
 import com.duangframework.agv.kit.ToolsKit;
+import org.opentcs.data.TCSObjectReference;
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.drivers.vehicle.VehicleProcessModel;
 
@@ -14,7 +15,7 @@ import static org.opentcs.util.Assertions.checkInRange;
  * 车辆进程参数模型
  * @author Laotang
  */
-public class ProcessModel extends VehicleProcessModel {
+public class ProcessModel extends VehicleModel {
 
     /**车辆的地址*/
     private String vehicleHost;
@@ -55,6 +56,10 @@ public class ProcessModel extends VehicleProcessModel {
 //     */
 //    private MakerwitResponse previousState;
 
+    /**
+     * A reference to the vehicle.
+     */
+    private TCSObjectReference<Vehicle> vehicleReference;
 
     /**
      * 构造方法
@@ -63,6 +68,12 @@ public class ProcessModel extends VehicleProcessModel {
      */
     public ProcessModel(@Nonnull Vehicle attachedVehicle) {
         super(attachedVehicle);
+        this.vehicleReference = attachedVehicle.getReference();
+    }
+
+    @Nonnull
+    public TCSObjectReference<Vehicle> getVehicleReference() {
+        return vehicleReference;
     }
 
     public String getVehicleHost() {

@@ -1,6 +1,6 @@
 package com.duangframework.agv.adapter;
 
-import com.duangframework.agv.model.ProcessModelTO;
+import com.duangframework.agv.model.VehicleModelTO;
 import org.opentcs.access.KernelServicePortal;
 import org.opentcs.data.TCSObjectReference;
 import org.opentcs.data.model.Vehicle;
@@ -9,11 +9,10 @@ import org.opentcs.drivers.vehicle.management.VehicleCommAdapterPanel;
 import org.opentcs.drivers.vehicle.management.VehicleCommAdapterPanelFactory;
 import org.opentcs.drivers.vehicle.management.VehicleProcessModelTO;
 
-import org.opentcs.virtualvehicle.AdapterPanelComponentsFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +35,7 @@ public class CommAdapterPanelFactory implements VehicleCommAdapterPanelFactory {
     private boolean initialized;
 
 
+    @Inject
     public CommAdapterPanelFactory(KernelServicePortal servicePortal, PanelComponentsFactory componentsFactory) {
         this.servicePortal = requireNonNull(servicePortal, "servicePortal");
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
@@ -72,14 +72,15 @@ public class CommAdapterPanelFactory implements VehicleCommAdapterPanelFactory {
         requireNonNull(vehicle, "vehicle");
         requireNonNull(processModel, "processModel");
 
-        if(!providesPanelsFor(description, processModel)) {
-            logger.warn("无法为具有'{}'的'{}'提供面板.", description, processModel);
+        // TODO  必须先实现CommAdapter里的createCustomTransferableProcessModel方法，否则(processModel instanceof VehicleModelTO)会返回false
+       if(!providesPanelsFor(description, processModel)) {
+            logger.warn("无法为具有'{}'适配器的'{}'提供面板.", description.getDescription(), processModel.getVehicleName());
             return new ArrayList<>();
         }
 
         List<VehicleCommAdapterPanel> panels = new ArrayList<>();
-        panels.add(componentsFactory.createPanel(((ProcessModelTO) processModel),
-                servicePortal.getVehicleService()));
+        VehicleModelTO vehicleModelTO= (VehicleModelTO)processModel;
+        panels.add(componentsFactory.createControlPanel(vehicleModelTO, servicePortal.getVehicleService()));
 
         return panels;
     }
@@ -88,7 +89,7 @@ public class CommAdapterPanelFactory implements VehicleCommAdapterPanelFactory {
     private boolean providesPanelsFor(VehicleCommAdapterDescription description,
                                       VehicleProcessModelTO processModel) {
         return (description instanceof CommAdapterDescription)
-                && (processModel instanceof ProcessModelTO);
+                && (processModel instanceof VehicleModelTO);
     }
 
 }
