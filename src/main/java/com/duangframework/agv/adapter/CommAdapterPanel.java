@@ -1,6 +1,7 @@
 package com.duangframework.agv.adapter;
 
 import com.duangframework.agv.enums.Attribute;
+import com.duangframework.agv.kit.PropKit;
 import com.duangframework.agv.model.VehicleModelTO;
 import com.duangframework.agv.model.VehicleModel;
 import org.opentcs.drivers.vehicle.management.VehicleCommAdapterPanel;
@@ -59,7 +60,7 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
     private final CallWrapper callWrapper;
 
     @Inject
-    public CommAdapterPanel(VehicleModelTO processModel,
+    public CommAdapterPanel(@Assisted VehicleModelTO processModel,
                                     @Assisted VehicleService vehicleService,
                                     @ServiceCallWrapper CallWrapper callWrapper) {
 
@@ -72,18 +73,20 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
     }
 
     @Override
-    public void processModelChange(String attributeChanged, VehicleProcessModelTO processModel) {
+    public void processModelChange(String attributeChanged, VehicleProcessModelTO newProcessModel) {
         if (!(processModel instanceof VehicleModelTO)) {
             return;
         }
-        this.processModel = (VehicleModelTO) processModel;
+        this.processModel = (VehicleModelTO) newProcessModel;
+        updateVehicleModelData(attributeChanged, processModel);
+        updateVehicleProcessModelData(attributeChanged, processModel);
     }
 
     private void initGuiContent() {
-        for (VehicleProcessModel.Attribute attribute : VehicleProcessModel.Attribute.values()) {
-            processModelChange(attribute.name(), processModel);
-        }
-        for (VehicleModel.Attribute attribute : VehicleModel.Attribute.values()) {
+//        for (VehicleProcessModel.Attribute attribute : VehicleProcessModel.Attribute.values()) {
+//            processModelChange(attribute.name(), processModel);
+//        }
+        for (Attribute attribute : Attribute.values()) {
             processModelChange(attribute.name(), processModel);
         }
     }
@@ -185,7 +188,12 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         maxFwdVeloTxt.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         maxFwdVeloTxt.setText("0");
         maxFwdVeloTxt.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        maxFwdVeloTxt.setEnabled(false);
+        maxFwdVeloTxt.setEnabled(true);
+        maxFwdVeloTxt.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                maxFwdVeloTxtMouseExited(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
@@ -341,8 +349,10 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         connectionPanel.setName("connectionPanel"); // NOI18N
         connectionPanel.setLayout(new java.awt.GridBagLayout());
 
-        chkBoxEnable.setText(BUNDLE.getString("loopbackCommAdapterPanel.checkBox_enableAdapter.text")); // NOI18N
+//        chkBoxEnable.setText(BUNDLE.getString("loopbackCommAdapterPanel.checkBox_enableAdapter.text")); // NOI18N
+        chkBoxEnable.setText(PropKit.get("adapter.name")); // NOI18N
         chkBoxEnable.setName("chkBoxEnable"); // NOI18N
+//        chkBoxEnable.setEnabled(false);
         chkBoxEnable.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 chkBoxEnableActionPerformed(evt);
@@ -991,11 +1001,12 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         SwingUtilities.invokeLater(() -> precisePosTextArea.setEnabled(enabled));
         SwingUtilities.invokeLater(() -> orientationAngleTxt.setEnabled(enabled));
         SwingUtilities.invokeLater(() -> pauseVehicleCheckBox.setEnabled(enabled));
+        SwingUtilities.invokeLater(() -> maxFwdVeloTxt.setEnabled(enabled));
+        SwingUtilities.invokeLater(() -> maxFwdVeloTxt.setEditable(enabled));
     }
 
     private TCSObjectReference<Vehicle> getVehicleReference()
             throws Exception {
-        System.out.println("##################processModel.getVehicleName(): " + processModel.getVehicleName());
         return callWrapper.call(() -> vehicleService.fetchObject(Vehicle.class, processModel.getVehicleName())).getReference();
     }
 
@@ -1021,7 +1032,7 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         if (singleModeRadioButton.isSelected()) {
             triggerButton.setEnabled(true);
 
-            sendCommAdapterCommand(new SetSingleStepModeEnabledCommand(true));
+            sendCommAdapterCommand(new com.duangframework.agv.commands.SetSingleStepModeEnabledCommand(true));
         }
     }//GEN-LAST:event_singleModeRadioButtonActionPerformed
 
@@ -1029,18 +1040,18 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         if (flowModeRadioButton.isSelected()) {
             triggerButton.setEnabled(false);
 
-            sendCommAdapterCommand(new SetSingleStepModeEnabledCommand(false));
-            sendCommAdapterCommand(new TriggerCommand());
+            sendCommAdapterCommand(new com.duangframework.agv.commands.SetSingleStepModeEnabledCommand(false));
+            sendCommAdapterCommand(new com.duangframework.agv.commands.TriggerCommand());
         }
     }//GEN-LAST:event_flowModeRadioButtonActionPerformed
 
     private void triggerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_triggerButtonActionPerformed
-        sendCommAdapterCommand(new TriggerCommand());
+        sendCommAdapterCommand(new com.duangframework.agv.commands.TriggerCommand());
     }//GEN-LAST:event_triggerButtonActionPerformed
 
     private void chkBoxEnableActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chkBoxEnableActionPerformed
         try {
-            System.out.println("####################chkBoxEnableActionPerformed：" + processModel.getVehicleName());
+//            System.out.println("####################chkBoxEnableActionPerformed：" + processModel.getVehicleName());
             Vehicle vehicle = callWrapper.call(() -> vehicleService.fetchObject(Vehicle.class, processModel.getVehicleName()));
 
             if (chkBoxEnable.isSelected()) {
@@ -1217,12 +1228,25 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
         }
     }//GEN-LAST:event_orientationAngleTxtMouseClicked
 
+    private void maxFwdVeloTxtMouseExited(java.awt.event.MouseEvent evt) {
+        if (!maxFwdVeloTxt.isEnabled()) {
+            return;
+        }
+        String fwdValue = maxFwdVeloTxt.getText();
+        try {
+            int fwdIntValue = Integer.parseInt(fwdValue);
+            sendCommAdapterCommand(new com.duangframework.agv.commands.SetMaxFwdVeloTxtCommand(fwdIntValue));
+        } catch (NumberFormatException e) {
+            return;
+        }
+    }
+
     private void pauseVehicleCheckBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_pauseVehicleCheckBoxItemStateChanged
         if (evt.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
-            sendCommAdapterCommand(new SetVehiclePausedCommand(true));
+            sendCommAdapterCommand(new com.duangframework.agv.commands.SetVehiclePausedCommand(true));
         }
         else if (evt.getStateChange() == java.awt.event.ItemEvent.DESELECTED) {
-            sendCommAdapterCommand(new SetVehiclePausedCommand(false));
+            sendCommAdapterCommand(new com.duangframework.agv.commands.SetVehiclePausedCommand(false));
         }
     }//GEN-LAST:event_pauseVehicleCheckBoxItemStateChanged
 
@@ -1252,7 +1276,7 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
                 return;
             }
 
-            sendCommAdapterCommand(new SetEnergyLevelCommand(energy));
+            sendCommAdapterCommand(new com.duangframework.agv.commands.SetEnergyLevelCommand(energy));
         }
     }//GEN-LAST:event_energyLevelTxtMouseClicked
 

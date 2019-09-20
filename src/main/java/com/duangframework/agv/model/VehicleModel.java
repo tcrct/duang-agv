@@ -67,7 +67,7 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
         boolean oldValue = singleStepModeEnabled;
         singleStepModeEnabled = mode;
 
-        getPropertyChangeSupport().firePropertyChange(Attribute.SINGLE_STEP_MODE.name(),
+        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.SINGLE_STEP_MODE.name(),
                 oldValue,
                 mode);
     }
@@ -100,7 +100,7 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
         int oldValue = this.operatingTime;
         this.operatingTime = defaultOperatingTime;
 
-        getPropertyChangeSupport().firePropertyChange(Attribute.OPERATING_TIME.name(),
+        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.OPERATING_TIME.name(),
                 oldValue,
                 defaultOperatingTime);
     }
@@ -123,7 +123,7 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
         int oldValue = velocityController.getMaxDeceleration();
         velocityController.setMaxDeceleration(maxDeceleration);
 
-        getPropertyChangeSupport().firePropertyChange(Attribute.DECELERATION.name(),
+        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.DECELERATION.name(),
                 oldValue,
                 maxDeceleration);
     }
@@ -146,7 +146,7 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
         int oldValue = velocityController.getMaxAcceleration();
         velocityController.setMaxAcceleration(maxAcceleration);
 
-        getPropertyChangeSupport().firePropertyChange(Attribute.ACCELERATION.name(),
+        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.ACCELERATION.name(),
                 oldValue,
                 maxAcceleration);
     }
@@ -192,7 +192,7 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
         int oldValue = velocityController.getMaxFwdVelocity();
         velocityController.setMaxFwdVelocity(maxFwdVelocity);
 
-        getPropertyChangeSupport().firePropertyChange(Attribute.MAX_FORWARD_VELOCITY.name(),
+        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.MAX_FORWARD_VELOCITY.name(),
                 oldValue,
                 maxFwdVelocity);
     }
@@ -215,7 +215,7 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
         boolean oldValue = velocityController.isVehiclePaused();
         velocityController.setVehiclePaused(pause);
 
-        getPropertyChangeSupport().firePropertyChange(Attribute.VEHICLE_PAUSED.name(),
+        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.VEHICLE_PAUSED.name(),
                 oldValue,
                 pause);
     }
@@ -245,7 +245,7 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
         // Store the new value in the history...
         velocityHistory.addVelocityValue(velocityValue);
         // ...and let all observers know about it.
-        getPropertyChangeSupport().firePropertyChange(Attribute.VELOCITY_HISTORY.name(),
+        getPropertyChangeSupport().firePropertyChange(com.duangframework.agv.enums.Attribute.VELOCITY_HISTORY.name(),
                 null,
                 velocityHistory);
     }
@@ -294,43 +294,5 @@ public class VehicleModel extends VehicleProcessModel implements VelocityListene
             result = AdapterConstants.PROPVAL_UNLOAD_OPERATION_DEFAULT;
         }
         return result;
-    }
-
-    /**
-     * Notification arguments to indicate some change.
-     */
-    public static enum Attribute {
-        /**
-         * Indicates a change of the virtual vehicle's single step mode setting.
-         */
-        SINGLE_STEP_MODE,
-        /**
-         * Indicates a change of the virtual vehicle's default operating time.
-         */
-        OPERATING_TIME,
-        /**
-         * Indicates a change of the virtual vehicle's maximum acceleration.
-         */
-        ACCELERATION,
-        /**
-         * Indicates a change of the virtual vehicle's maximum deceleration.
-         */
-        DECELERATION,
-        /**
-         * Indicates a change of the virtual vehicle's maximum forward velocity.
-         */
-        MAX_FORWARD_VELOCITY,
-        /**
-         * Indicates a change of the virtual vehicle's maximum reverse velocity.
-         */
-        MAX_REVERSE_VELOCITY,
-        /**
-         * Indicates a change of the virtual vehicle's paused setting.
-         */
-        VEHICLE_PAUSED,
-        /**
-         * Indicates a change of the virtual vehicle's velocity history.
-         */
-        VELOCITY_HISTORY,
     }
 }

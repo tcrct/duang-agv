@@ -20,6 +20,7 @@ public class Configure {
         System.setProperty("opentcs.base", configPath);
         System.setProperty("opentcs.home", ".");
         System.setProperty("splash", configPath + "/bin/splash-image.gif");
+        System.setProperty("file.encoding", "UTF-8");
     }
 
 }

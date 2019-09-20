@@ -1,5 +1,7 @@
 package com.duangframework.agv.kit;
 
+import io.netty.buffer.ByteBufUtil;
+
 public class CrcKit {
     /**
      * 获取源数据和验证码的组合byte数组
@@ -55,6 +57,10 @@ public class CrcKit {
         return wCrc;
     }
 
+    public static String CrcVerify_Str(String sourceStr) {
+        return toString("%04x", CrcVerify(sourceStr));
+    }
+
     /**
      * 获取验证码byte数组，基于Modbus CRC16的校验算法
      */
@@ -92,7 +98,46 @@ public class CrcKit {
         return src;
     }
 
-    private static String toString(byte[] crcByte) {
-        return new String(crcByte);
+    /**
+     * int --> byte[] 整形转byte[]
+     * @param res
+     * @return
+     */
+    public static byte[] int2byte(int res) {
+        byte[] targets = new byte[4];
+
+        targets[0] = (byte) (res & 0xff);// 最低位
+        targets[1] = (byte) ((res >> 8) & 0xff);// 次低位
+        targets[2] = (byte) ((res >> 16) & 0xff);// 次高位
+        targets[3] = (byte) (res >>> 24);// 最高位,无符号右移。
+        return targets;
+    }
+
+    /**
+     * byte[] -->int byte[]转整形
+     * @param res
+     * @return
+     */
+    public static int byte2int(byte[] res) {
+        // 一个byte数据左移24位变成0x??000000，再右移8位变成0x00??0000
+
+        int targets = (res[0] & 0xff) | ((res[1] << 8) & 0xff00) // | 表示安位或
+                | ((res[2] << 24) >>> 8) | (res[3] << 24);
+        return targets;
+    }
+
+    private static String toString(String format,int crcInt) {
+//        String format = "%04x"
+        try {
+            return String.format(format, crcInt);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    public static void main(String[] args) {
+        String ss = "##,,A022,,r,,rptac,,754::b::66::6::0000::2393,,";
+//        String aa = String.format("%04x", CrcVerify(ss));
+        System.out.println(toString("%04x", CrcVerify(ss)));
     }
 }

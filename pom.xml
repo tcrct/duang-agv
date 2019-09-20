@@ -77,17 +77,35 @@
       <groupId>org.opentcs</groupId>
       <artifactId>opentcs-kernel</artifactId>
       <version>${opentcs.version}</version>
+<!--      <exclusions>-->
+<!--        <exclusion>-->
+<!--          <groupId>org.opentcs</groupId>-->
+<!--          <artifactId>opentcs-commadapter-loopback</artifactId>-->
+<!--        </exclusion>-->
+<!--      </exclusions>-->
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.opentcs/opentcs-api-injection -->
     <dependency>
       <groupId>org.opentcs</groupId>
       <artifactId>opentcs-api-injection</artifactId>
       <version>${opentcs.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.opentcs</groupId>
+          <artifactId>opentcs-commadapter-loopback</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.opentcs</groupId>
       <artifactId>opentcs-kernelcontrolcenter</artifactId>
       <version>${opentcs.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.opentcs</groupId>
+          <artifactId>opentcs-commadapter-loopback</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.opentcs</groupId>

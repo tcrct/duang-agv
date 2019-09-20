@@ -18,7 +18,6 @@ import org.opentcs.drivers.vehicle.BasicVehicleCommAdapter;
 import org.opentcs.drivers.vehicle.MovementCommand;
 import org.opentcs.util.Comparators;
 import org.opentcs.util.ExplainedBoolean;
-import org.opentcs.virtualvehicle.LoopbackVehicleModelTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +46,13 @@ public class CommAdapter extends BasicVehicleCommAdapter {
     // 模板
     private AgreementTemplate template;
 
+    private boolean singleStepExecutionAllowed = false;
+
     private final Map<MovementCommand, String> cmdIds = new ConcurrentHashMap<>();
 
     private final Map<String, String> lastFinishedPositionIds =new ConcurrentHashMap<>();
 
-    private TCSObjectService objectService;
+//    private TCSObjectService objectService;
 
 
     /***
@@ -60,13 +61,13 @@ public class CommAdapter extends BasicVehicleCommAdapter {
      * @param componentsFactory 组件工厂
      */
     @Inject
-    public CommAdapter(@Assisted Vehicle vehicle, TCSObjectService objectService, ComponentsFactory componentsFactory) {
+    public CommAdapter(@Assisted Vehicle vehicle, ComponentsFactory componentsFactory) {
         super(new ProcessModel(vehicle), 3, 2, LoadAction.CHARGE);
         String agreementTemplate = PropKit.get("agreement.template", "");
         requireNonNull(agreementTemplate,"请在duang.properties里设置agreement.template值");
         this.template = ObjectKit.newInstance(agreementTemplate);
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
-        this.objectService = objectService;
+//        this.objectService = objectService;
         template.setComponent(this);
     }
 
@@ -96,7 +97,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         if (isEnabled()) {
             return;
         }
-
+        getProcessModel().getVelocityController().addVelocityListener(getProcessModel());
         // 创建负责与车辆连接的渠道管理器,基于netty
         vehicleChannelManager = new TcpClientChannelManager<String, String>(template.getConnEventListener(),
                 template.getChannelHandlers(),
@@ -130,6 +131,23 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         return template;
     }
 
+
+    public synchronized void trigger() {
+        singleStepExecutionAllowed = true;
+    }
+    /**
+     * 是否可以发送下一条指令
+     * @return true可以发送
+     */
+    @Override
+    protected synchronized boolean canSendNextCommand() {
+        boolean isCanSendNextCommand =  super.canSendNextCommand()
+                && (!getProcessModel().isSingleStepModeEnabled() || singleStepExecutionAllowed);
+
+//        logger.info("canSendNextCommand {}", isCanSendNextCommand);
+        return isCanSendNextCommand;
+    }
+
     /**
      * 控制中心完成运输订单设置后，在车辆每移动一个点时，会执行以下方法
      * @param cmd 车辆移动相关参数
@@ -139,6 +157,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
     public void sendCommand(MovementCommand cmd) throws IllegalArgumentException {
         requireNonNull(cmd, "cmd");
         logger.info("sendCommand {}", cmd);
+        singleStepExecutionAllowed = false;
         try {
             // 将移动的参数转换为请求参数，这里要根据协议规则生成对应的请求对象
             Telegram telegram =  template.builderTelegram(getProcessModel(), cmd);
@@ -174,23 +193,23 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         String host = getProcessModel().getVehicleHost();
         int port =getProcessModel().getVehiclePort();
         vehicleChannelManager.connect(host, port);
-        List<String> pointNameList = new ArrayList<>();
+//        List<String> pointNameList = new ArrayList<>();
 
-        Set<Point> pointSet = objectService.fetchObjects(Point.class);
-        List<Point> pointList = new ArrayList<>(pointSet);
-        Collections.sort(pointList, Comparators.objectsByName());
-        pointList.add(0, null);
-        for(Point point : pointList) {
-            if(null != point) {
-                getProcessModel().setVehiclePosition(point.getName());
-            }
-        }
+//        Set<Point> pointSet = objectService.fetchObjects(Point.class);
+//        List<Point> pointList = new ArrayList<>(pointSet);
+//        Collections.sort(pointList, Comparators.objectsByName());
+//        pointList.add(0, null);
+//        for(Point point : pointList) {
+//            if(null != point) {
+//                getProcessModel().setVehiclePosition(point.getName());
+//            }
+//        }
 
 
 
 //        getProcessModel().setVehiclePosition(((Point) item).getName());
         // TODO 可以改为下拉选择的方式 ，待完成，目前先将起点位置设置为Point-0001
-//        getProcessModel().setVehiclePosition("Point-0001");
+        getProcessModel().setVehiclePosition("Point-0001");
         getProcessModel().setVehicleState(Vehicle.State.IDLE);
         getProcessModel().setVehicleIdle(true);
 
@@ -302,13 +321,14 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 //            CommAdapter.this.notify();
 //        }
     }
-
     /**
      * 必须实现，用于将值传递到控制中心的自定义面板
+     * 启动时，面板点击更新后均会触发
      * @return
      */
     @Override
     protected VehicleModelTO createCustomTransferableProcessModel() {
+        logger.warn("#############createCustomTransferableProcessModel#####################");
         // 发送到其他软件（如控制中心或工厂概览）时，添加车辆的附加信息
         return new VehicleModelTO()
                 .setLoadOperation(getProcessModel().getLoadOperation())
