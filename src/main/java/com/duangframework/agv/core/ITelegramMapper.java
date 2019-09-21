@@ -1,6 +1,7 @@
 package com.duangframework.agv.core;
 
 import io.netty.channel.ChannelHandler;
+import org.opentcs.components.kernel.services.TCSObjectService;
 import org.opentcs.drivers.vehicle.MovementCommand;
 
 import java.util.List;

@@ -1264,6 +1264,7 @@ public class CommAdapterPanel extends VehicleCommAdapterPanel {
                 .enableValidation(TextInputPanel.TextInputValidator.REGEX_INT_RANGE_0_100)
                 .build();
         InputDialog dialog = new InputDialog(panel);
+        dialog.setResizable(true);
         dialog.setVisible(true);
         // Get result from dialog and set energy level
         if (dialog.getReturnStatus() == InputDialog.ReturnStatus.ACCEPTED) {

@@ -1,5 +1,6 @@
 package com.duangframework.agv.adapter;
 
+import com.alibaba.fastjson.JSON;
 import com.duangframework.agv.core.*;
 import com.duangframework.agv.enums.LoadAction;
 import com.duangframework.agv.enums.LoadState;
@@ -11,6 +12,7 @@ import com.duangframework.agv.model.VehicleModelTO;
 import com.google.inject.assistedinject.Assisted;
 import org.opentcs.components.kernel.services.TCSObjectService;
 import org.opentcs.contrib.tcp.netty.TcpClientChannelManager;
+import org.opentcs.data.model.Path;
 import org.opentcs.data.model.Point;
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.data.order.DriveOrder;
@@ -52,7 +54,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
     private final Map<String, String> lastFinishedPositionIds =new ConcurrentHashMap<>();
 
-//    private TCSObjectService objectService;
+    private TCSObjectService objectService;
 
 
     /***
@@ -61,14 +63,18 @@ public class CommAdapter extends BasicVehicleCommAdapter {
      * @param componentsFactory 组件工厂
      */
     @Inject
-    public CommAdapter(@Assisted Vehicle vehicle, ComponentsFactory componentsFactory) {
+    public CommAdapter(@Assisted Vehicle vehicle, TCSObjectService objectService, ComponentsFactory componentsFactory) {
         super(new ProcessModel(vehicle), 3, 2, LoadAction.CHARGE);
         String agreementTemplate = PropKit.get("agreement.template", "");
         requireNonNull(agreementTemplate,"请在duang.properties里设置agreement.template值");
         this.template = ObjectKit.newInstance(agreementTemplate);
         this.componentsFactory = requireNonNull(componentsFactory, "componentsFactory");
-//        this.objectService = objectService;
+        this.objectService = objectService;
         template.setComponent(this);
+    }
+
+    public TCSObjectService getObjectService() {
+        return objectService;
     }
 
     /***
@@ -193,17 +199,32 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         String host = getProcessModel().getVehicleHost();
         int port =getProcessModel().getVehiclePort();
         vehicleChannelManager.connect(host, port);
-//        List<String> pointNameList = new ArrayList<>();
+        List<String> pointNameList = new ArrayList<>();
 
-//        Set<Point> pointSet = objectService.fetchObjects(Point.class);
-//        List<Point> pointList = new ArrayList<>(pointSet);
-//        Collections.sort(pointList, Comparators.objectsByName());
-//        pointList.add(0, null);
-//        for(Point point : pointList) {
-//            if(null != point) {
+        Set<Path> PathSet = objectService.fetchObjects(Path.class);
+        for (Path p: PathSet) {
+            System.out.println("path:  " + JSON.toJSONString(p));
+        }
+
+        Set<Vehicle> VehicleSet = objectService.fetchObjects(Vehicle.class);
+        for (Vehicle vehicle: VehicleSet) {
+            System.out.println("Vehicle:  " + JSON.toJSONString(vehicle));
+        }
+
+
+        Point point003 = objectService.fetchObject(Point.class, "Point-0003");
+
+        System.out.println(point003.getName()+"         point003         "+point003.getProperties());
+        Set<Point> pointSet = objectService.fetchObjects(Point.class);
+        List<Point> pointList = new ArrayList<>(pointSet);
+        Collections.sort(pointList, Comparators.objectsByName());
+        pointList.add(0, null);
+        for(Point point : pointList) {
+            if(null != point) {
+                System.out.println("point: " +  JSON.toJSONString(point));
 //                getProcessModel().setVehiclePosition(point.getName());
-//            }
-//        }
+            }
+        }
 
 
 
@@ -328,7 +349,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
      */
     @Override
     protected VehicleModelTO createCustomTransferableProcessModel() {
-        logger.warn("#############createCustomTransferableProcessModel#####################");
+//        logger.warn("#############createCustomTransferableProcessModel#####################");
         // 发送到其他软件（如控制中心或工厂概览）时，添加车辆的附加信息
         return new VehicleModelTO()
                 .setLoadOperation(getProcessModel().getLoadOperation())

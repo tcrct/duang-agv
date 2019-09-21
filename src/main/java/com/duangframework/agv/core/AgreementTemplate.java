@@ -7,6 +7,10 @@ import com.duangframework.agv.codec.VehicleTelegramEncoder;
 import com.duangframework.agv.listener.ConnEventListener;
 import com.duangframework.agv.model.ProcessModel;
 import io.netty.channel.ChannelHandler;
+import org.opentcs.components.kernel.services.TCSObjectService;
+import org.opentcs.data.model.Path;
+import org.opentcs.data.model.Point;
+import org.opentcs.data.model.Vehicle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,12 +27,17 @@ public abstract class AgreementTemplate implements ITelegramMapper<ProcessModel>
 
     private CommAdapter commAdapter;
     private ConnEventListener connEventListener;
+    private TCSObjectService objectService;
 
     public AgreementTemplate() {
     }
 
     public void setComponent(CommAdapter adapter) {
+        java.util.Objects.requireNonNull(adapter, "适配器");
         this.commAdapter = adapter;
+        objectService = adapter.getObjectService();
+        java.util.Objects.requireNonNull(objectService, "objectService");
+
     }
 
     public ConnEventListener getConnEventListener() {
@@ -55,9 +64,6 @@ public abstract class AgreementTemplate implements ITelegramMapper<ProcessModel>
         return listSupplier;
     }
 
-
-
-
     @Override
     public void sendTelegram(Telegram telegram) {
         requireNonNull(telegram, "telegram");
@@ -70,6 +76,36 @@ public abstract class AgreementTemplate implements ITelegramMapper<ProcessModel>
 
         logger.info("{}: Sending request '{}'", commAdapter.getName(), telegram.toString());
         commAdapter.getVehicleChannelManager().send(telegram.toString());
+    }
+
+    /**
+     * 取点对象
+     * @param pointName
+     * @return
+     */
+    public Point getPoint(String pointName) {
+        java.util.Objects.requireNonNull(pointName, "点对象名称");
+        return objectService.fetchObject(Point.class, pointName);
+    }
+
+    /**
+     * 取路径对象
+     * @param pathName
+     * @return
+     */
+    public Path getPath(String pathName) {
+        java.util.Objects.requireNonNull(pathName, "点对象名称");
+        return objectService.fetchObject(Path.class, pathName);
+    }
+
+    /**
+     * 取路径对象
+     * @param pathName
+     * @return
+     */
+    public Vehicle getVehicle(String vehicleName) {
+        java.util.Objects.requireNonNull(vehicleName, "车辆对象名称");
+        return objectService.fetchObject(Vehicle.class, vehicleName);
     }
 
 }
