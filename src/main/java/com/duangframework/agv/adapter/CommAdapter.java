@@ -231,12 +231,14 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
 
 //        getProcessModel().setVehiclePosition(((Point) item).getName());
+
+         */
         // TODO 可以改为下拉选择的方式 ，待完成，目前先将起点位置设置为Point-0001
-        getProcessModel().setVehiclePosition("Point-0001");
+        getProcessModel().setVehiclePosition("700");
         getProcessModel().setVehicleState(Vehicle.State.IDLE);
         getProcessModel().setVehicleIdle(true);
 
-         */
+
 
         logger.warn("连接车辆 {} 成功:  host:{} port:{}.", getName(), host, port);
     }
