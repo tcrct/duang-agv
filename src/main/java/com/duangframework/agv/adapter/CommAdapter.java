@@ -150,7 +150,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         boolean isCanSendNextCommand =  super.canSendNextCommand()
                 && (!getProcessModel().isSingleStepModeEnabled() || singleStepExecutionAllowed);
 
-//        logger.info("canSendNextCommand {}", isCanSendNextCommand);
+        logger.debug("canSendNextCommand {}", isCanSendNextCommand);
         return isCanSendNextCommand;
     }
 
@@ -162,7 +162,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
     @Override
     public void sendCommand(MovementCommand cmd) throws IllegalArgumentException {
         requireNonNull(cmd, "cmd");
-        logger.info("sendCommand {}", cmd);
+        logger.debug("sendCommand {}", cmd);
         singleStepExecutionAllowed = false;
         try {
             // 将移动的参数转换为请求参数，这里要根据协议规则生成对应的请求对象
@@ -171,7 +171,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
             cmdIds.put(cmd, telegram.getId());
             // 把请求加入队列。请求发送规则是FIFO。这确保我们总是等待响应，直到发送新请求。
             telegramMatcher.enqueueRequestTelegram(telegram);
-            logger.info("{}: 将订单报文提交到消息队列完成", getName());
+            logger.debug("{}: 将订单报文提交到消息队列完成", getName());
         } catch (Exception e) {
             logger.error("{}: 将订单报文提交到消息队列失败 {}", getName(), cmd, e);
         }
@@ -199,6 +199,8 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         String host = getProcessModel().getVehicleHost();
         int port =getProcessModel().getVehiclePort();
         vehicleChannelManager.connect(host, port);
+
+        /*
         List<String> pointNameList = new ArrayList<>();
 
         Set<Path> PathSet = objectService.fetchObjects(Path.class);
@@ -214,7 +216,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
         Point point003 = objectService.fetchObject(Point.class, "Point-0003");
 
-        System.out.println(point003.getName()+"         point003         "+point003.getProperties());
+//        System.out.println(point003.getName()+"         point003         "+point003.getProperties());
         Set<Point> pointSet = objectService.fetchObjects(Point.class);
         List<Point> pointList = new ArrayList<>(pointSet);
         Collections.sort(pointList, Comparators.objectsByName());
@@ -233,6 +235,8 @@ public class CommAdapter extends BasicVehicleCommAdapter {
         getProcessModel().setVehiclePosition("Point-0001");
         getProcessModel().setVehicleState(Vehicle.State.IDLE);
         getProcessModel().setVehicleIdle(true);
+
+         */
 
         logger.warn("连接车辆 {} 成功:  host:{} port:{}.", getName(), host, port);
     }
@@ -328,7 +332,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
         // 将报告的位置ID映射到点名称
         String currentPosition = telegram.getPositionId();
-        logger.info("{}: Vehicle is now at point {}", getName(), currentPosition);
+        logger.debug("{}: Vehicle is now at point {}", getName(), currentPosition);
         // 更新位置，但前提是它不能是空
         if (ToolsKit.isNotEmpty(currentPosition)) {
             getProcessModel().setVehiclePosition(currentPosition);

@@ -74,7 +74,7 @@ public abstract class AgreementTemplate implements ITelegramMapper<ProcessModel>
             return;
         }
 
-        logger.info("{}: Sending request '{}'", commAdapter.getName(), telegram.toString());
+        logger.debug("{}: Sending request '{}'", commAdapter.getName(), telegram.toString());
         commAdapter.getVehicleChannelManager().send(telegram.toString());
     }
 

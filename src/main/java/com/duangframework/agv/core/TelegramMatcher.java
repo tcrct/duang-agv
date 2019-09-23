@@ -51,7 +51,7 @@ public class TelegramMatcher {
 
     /**检查是否发送下一个请求*/
     public void checkForSendingNextRequest() {
-        logger.info("检查是否发送下一个请求.");
+        logger.debug("检查是否发送下一个请求.");
         if (peekCurrentRequest().isPresent()) {
             telegramSender.sendTelegram(peekCurrentRequest().get());
         }

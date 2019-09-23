@@ -3,7 +3,6 @@ package com.duangframework.agv.listener;
 import com.duangframework.agv.adapter.CommAdapter;
 import com.duangframework.agv.core.Telegram;
 import com.duangframework.agv.kit.ToolsKit;
-import com.duangframework.agv.model.EmptyTelegram;
 import org.opentcs.contrib.tcp.netty.ConnectionEventListener;
 import org.opentcs.data.model.Vehicle;
 import org.slf4j.Logger;
@@ -37,7 +36,7 @@ public class ConnEventListener implements ConnectionEventListener<String> {
             // 如果不匹配，则忽略该响应或关闭连接
             return;
         }
-        logger.warn("控制中心接收到{}的回复: {}",commAdapter.getName(), telegram);
+//        logger.warn("控制中心接收到{}的回复: {}",commAdapter.getName(), telegram);
         /**检查并更新车辆状态，位置点*/
         commAdapter.checkForVehiclePositionUpdate(responseTelegram);
         /**在执行上面更新位置的方法后再检查是否有下一条请求需要发送*/
