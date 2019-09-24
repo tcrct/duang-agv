@@ -4,8 +4,13 @@ package com.duangframework.agv.core;
 import com.duangframework.agv.adapter.CommAdapter;
 import com.duangframework.agv.codec.VehicleTelegramDecoder;
 import com.duangframework.agv.codec.VehicleTelegramEncoder;
+import com.duangframework.agv.contrib.serialport.DataAvailableListener;
+import com.duangframework.agv.contrib.serialport.SerialPortManager;
+import com.duangframework.agv.enums.CommunicationType;
+import com.duangframework.agv.kit.ToolsKit;
 import com.duangframework.agv.listener.ConnEventListener;
 import com.duangframework.agv.model.ProcessModel;
+import gnu.io.SerialPort;
 import io.netty.channel.ChannelHandler;
 import org.opentcs.components.kernel.services.TCSObjectService;
 import org.opentcs.data.model.Path;
@@ -67,15 +72,21 @@ public abstract class AgreementTemplate implements ITelegramMapper<ProcessModel>
     @Override
     public void sendTelegram(Telegram telegram) {
         requireNonNull(telegram, "telegram");
-        if (!commAdapter.isVehicleConnected()) {
-            logger.debug("{}: Not connected - not sending request '{}'",
+        if (!commAdapter.isVehicleConnected() && CommunicationType.TCP.equals(Configure.getCommunicationType())) {
+            logger.error("{}: Not connected - not sending request '{}'",
                     commAdapter.getName(),
                     telegram);
             return;
         }
 
         logger.debug("{}: Sending request '{}'", commAdapter.getName(), telegram.toString());
-        commAdapter.getVehicleChannelManager().send(telegram.toString());
+        if(CommunicationType.SERIALPORT.equals(Configure.getCommunicationType())){
+            SerialPortManager.sendToPort(Configure.getSerialport(), telegram.toString().getBytes());
+        } else if(CommunicationType.UDP.equals(Configure.getCommunicationType())) {
+
+        } else {
+            commAdapter.getVehicleChannelManager().send(telegram.toString());
+        }
     }
 
     /**
@@ -100,7 +111,7 @@ public abstract class AgreementTemplate implements ITelegramMapper<ProcessModel>
 
     /**
      * 取路径对象
-     * @param pathName
+     * @param vehicleName
      * @return
      */
     public Vehicle getVehicle(String vehicleName) {
