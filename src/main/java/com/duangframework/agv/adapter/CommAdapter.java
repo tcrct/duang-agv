@@ -231,9 +231,10 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
 
 //        getProcessModel().setVehiclePosition(((Point) item).getName());
-*/
+
+         */
         // TODO 可以改为下拉选择的方式 ，待完成，目前先将起点位置设置为Point-0001
-        getProcessModel().setVehiclePosition("36");
+        getProcessModel().setVehiclePosition("700");
         getProcessModel().setVehicleState(Vehicle.State.IDLE);
         getProcessModel().setVehicleIdle(true);
 
@@ -273,6 +274,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
     @Override
     public ExplainedBoolean canProcess(@Nonnull List<String> operations) {
         requireNonNull(operations, "operations");
+        logger.info("canProcess: {}", operations);
         boolean canProcess = true;
         String reason = "";
 
@@ -316,7 +318,6 @@ public class CommAdapter extends BasicVehicleCommAdapter {
                     reason = "未加载时无法卸载";
             }
         }
-        logger.info("canProcess: {}, {}", operations, reason);
         return new ExplainedBoolean(canProcess, reason);
     }
 
