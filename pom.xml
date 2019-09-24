@@ -187,5 +187,12 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/opentcs-i18n.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>com.duangframework.contrib.seralport</groupId>
+      <artifactId>contrib.seralport</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/RXTXcomm.jar</systemPath>
+    </dependency>
   </dependencies>
 </project>

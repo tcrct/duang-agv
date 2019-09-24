@@ -1,5 +1,6 @@
 package com.duangframework.agv.core;
 
+import com.duangframework.agv.enums.CommunicationType;
 import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.opentcs.guing.RunPlantOverview;
 import org.opentcs.kernel.RunKernel;
@@ -19,6 +20,7 @@ public class Application {
     private static Application application;
     private List<IVehicleClient> vehicleClientList = new ArrayList<>();
     private Configure configure;
+    private CommunicationType communicationType;
 
     public static Application duang() {
         if(null == application) {
@@ -33,12 +35,22 @@ public class Application {
         return application;
     }
 
+    public Application type(CommunicationType typeEnum) {
+        this.communicationType = typeEnum;
+        return application;
+    }
+
     public Application configure(Configure config) {
         this.configure = config;
         return application;
     }
 
     public void run() throws Exception {
+        // 默认以串口的方式通讯
+        if (null == communicationType) {
+            communicationType = CommunicationType.SERIALPORT;
+        }
+
         if(null == configure) {
             configure = new Configure();
         }
@@ -51,7 +63,7 @@ public class Application {
         }
 
         // 初始化配置
-        configure.init();
+        configure.init(communicationType);
         logger.warn("初始化参数完成");
 
         // 启动内核

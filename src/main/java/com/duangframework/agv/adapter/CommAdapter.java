@@ -1,7 +1,10 @@
 package com.duangframework.agv.adapter;
 
 import com.alibaba.fastjson.JSON;
+import com.duangframework.agv.contrib.serialport.DataAvailableListener;
+import com.duangframework.agv.contrib.serialport.SerialPortManager;
 import com.duangframework.agv.core.*;
+import com.duangframework.agv.enums.CommunicationType;
 import com.duangframework.agv.enums.LoadAction;
 import com.duangframework.agv.enums.LoadState;
 import com.duangframework.agv.kit.ObjectKit;
@@ -10,6 +13,7 @@ import com.duangframework.agv.kit.ToolsKit;
 import com.duangframework.agv.model.ProcessModel;
 import com.duangframework.agv.model.VehicleModelTO;
 import com.google.inject.assistedinject.Assisted;
+import gnu.io.SerialPort;
 import org.opentcs.components.kernel.services.TCSObjectService;
 import org.opentcs.contrib.tcp.netty.TcpClientChannelManager;
 import org.opentcs.data.model.Path;
@@ -104,16 +108,55 @@ public class CommAdapter extends BasicVehicleCommAdapter {
             return;
         }
         getProcessModel().getVelocityController().addVelocityListener(getProcessModel());
-        // 创建负责与车辆连接的渠道管理器,基于netty
-        vehicleChannelManager = new TcpClientChannelManager<String, String>(template.getConnEventListener(),
-                template.getChannelHandlers(),
-                getProcessModel().getVehicleIdleTimeout(),
-                getProcessModel().isLoggingEnabled());
+        if(CommunicationType.SERIALPORT.equals(Configure.getCommunicationType())) {
+            SerialPortManager.addListener(Configure.getSerialport(), new DataAvailableListener() {
+                @Override
+                public void dataAvailable() {
+                    String telegram = readTelegram4SerialPort();
+                    logger.info("串口接收到的报文：" + telegram);
+                    Telegram responseTelegram =getTemplate().builderTelegram(telegram);
+                    if(!getTelegramMatcher().tryMatchWithCurrentRequestTelegram(responseTelegram)) {
+                        // 如果不匹配，则忽略该响应或关闭连接
+                        return;
+                    }
+                    /**检查并更新车辆状态，位置点*/
+                    checkForVehiclePositionUpdate(responseTelegram);
+                    /**在执行上面更新位置的方法后再检查是否有下一条请求需要发送*/
+                    getTelegramMatcher().checkForSendingNextRequest();
+                }
+            });
+        } else if(CommunicationType.UDP.equals(Configure.getCommunicationType())) {
 
-        // 初始化车辆渠道管理器
-        vehicleChannelManager.initialize();
+        } else {
+            // 创建负责与车辆连接的渠道管理器,基于netty
+            vehicleChannelManager = new TcpClientChannelManager<String, String>(template.getConnEventListener(),
+                    template.getChannelHandlers(),
+                    getProcessModel().getVehicleIdleTimeout(),
+                    getProcessModel().isLoggingEnabled());
+
+            // 初始化车辆渠道管理器
+            vehicleChannelManager.initialize();
+        }
         // 调用父类开启
         super.enable();
+    }
+
+    private String readTelegram4SerialPort() {
+        byte[] data = null;
+        SerialPort mSerialport = Configure.getSerialport();
+        try {
+            if (ToolsKit.isEmpty(mSerialport)) {
+                throw new NullPointerException("串口对象不能为null");
+            } else {
+                // 读取串口数据
+                data = SerialPortManager.readFromPort(mSerialport);
+                // 以字符串的形式接收数据
+                return new String(data);
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return "";
+        }
     }
 
     /**
@@ -191,14 +234,17 @@ public class CommAdapter extends BasicVehicleCommAdapter {
      */
     @Override
     protected void connectVehicle() {
-        if(ToolsKit.isEmpty(vehicleChannelManager)) {
-            logger.warn("连接车辆 {} 时失败: vehicleChannelManager not present.", getName());
-            return;
+        if(CommunicationType.TCP.equals(Configure.getCommunicationType())) {
+            if (ToolsKit.isEmpty(vehicleChannelManager)) {
+                logger.warn("连接车辆 {} 时失败: vehicleChannelManager not present.", getName());
+                return;
+            }
+            /**进行bind操作*/
+            String host = getProcessModel().getVehicleHost();
+            int port = getProcessModel().getVehiclePort();
+            vehicleChannelManager.connect(host, port);
+            logger.warn("连接车辆 {} 成功:  host:{} port:{}.", getName(), host, port);
         }
-        /**进行bind操作*/
-        String host = getProcessModel().getVehicleHost();
-        int port =getProcessModel().getVehiclePort();
-        vehicleChannelManager.connect(host, port);
 
         /*
         List<String> pointNameList = new ArrayList<>();
@@ -240,7 +286,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
 
 
 
-        logger.warn("连接车辆 {} 成功:  host:{} port:{}.", getName(), host, port);
+
     }
 
     /**
@@ -274,9 +320,12 @@ public class CommAdapter extends BasicVehicleCommAdapter {
     @Override
     public ExplainedBoolean canProcess(@Nonnull List<String> operations) {
         requireNonNull(operations, "operations");
-        logger.info("canProcess: {}", operations);
         boolean canProcess = true;
         String reason = "";
+
+        if(CommunicationType.SERIALPORT.equals(Configure.getCommunicationType())) {
+            return new ExplainedBoolean(canProcess, reason);
+        }
 
         if(!isEnabled()) {
             canProcess = false;
@@ -318,6 +367,7 @@ public class CommAdapter extends BasicVehicleCommAdapter {
                     reason = "未加载时无法卸载";
             }
         }
+        logger.info("canProcess: {}, reason: {}", operations, reason);
         return new ExplainedBoolean(canProcess, reason);
     }
 
